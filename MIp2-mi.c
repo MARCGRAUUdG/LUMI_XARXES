@@ -12,7 +12,20 @@
 /*  (si les funcions externes es cridessin entre elles, faria falta fer   */
 /*   un #include "mi.h")                                                  */
 
-#include "t.h"
+#include "MIp2-mi.h"
+#include <stdio.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -33,7 +46,14 @@
 /* creat si tot va bé.                                                    */
 int MI_IniciaEscPetiRemConv(int portTCPloc)
 {
-	
+	int socket;
+	if((socket = TCP_CreaSockServidor(IPLocal, portTCPloc)) == -1)
+	{
+		T_MostraError();
+		exit(-1);
+	}
+
+	return socket;
 }
 
 /* Escolta indefinidament fins que arriba una petició local de conversa   */
@@ -44,7 +64,11 @@ int MI_IniciaEscPetiRemConv(int portTCPloc)
 /* arriba una petició remota.                                             */
 int MI_HaArribatPetiConv(int SckEscMI)
 {
-	
+	int llistaSck[2];
+	llistaSck[0] = 0;
+	llistaSck[1] = SckEscMI;
+
+	return T_HaArribatAlgunaCosa(llistaSck, 2);
 }
 
 /* Crea una conversa iniciada per una petició local que arriba a través   */
@@ -68,7 +92,33 @@ int MI_HaArribatPetiConv(int SckEscMI)
 /* MI creat si tot va bé.                                                 */
 int MI_DemanaConv(const char *IPrem, int portTCPrem, char *IPloc, int *portTCPloc, const char *NicLoc, char *NicRem)
 {
-	
+	int socket;
+	if ((socket = TCP_CreaSockClient("0.0.0.0", 0)) == -1){
+		T_MostraError();
+		exit(-1);
+	}
+
+
+	if (TCP_DemanaConnexio(socket, IPrem, portTCPrem) == -1){
+		T_MostraError();
+		exit(-1);
+	}
+
+	if(TCP_TrobaAdrSockLoc(socket, IPloc, portTCPloc) == -1){
+		T_MostraError();
+		return -1;
+	}
+
+	if (TCP_Envia(socket, NicLoc, strlen(NicLoc)) == -1) {
+		T_MostraError();
+		exit(-1);
+	}
+
+	if (TCP_Rep(socket, NicRem, 200) == -1) {
+		T_MostraError();
+		exit(-1);
+	}
+	return socket;
 }
 
 /* Crea una conversa iniciada per una petició remota que arriba a través  */
@@ -91,7 +141,27 @@ int MI_DemanaConv(const char *IPrem, int portTCPrem, char *IPloc, int *portTCPlo
 /* de MI creat si tot va bé.                                              */
 int MI_AcceptaConv(int SckEscMI, char *IPrem, int *portTCPrem, char *IPloc, int *portTCPloc, const char *NicLoc, char *NicRem)
 {
-	
+	int socket;
+	if((socket = TCP_AcceptaConnexio(SckEscMI, IPrem, &portTCPrem)) == -1){
+		T_MostraError();
+		exit(-1);
+	}
+
+	if(TCP_TrobaAdrSockLoc(socket, IPloc, portTCPloc) == -1){
+		T_MostraError();
+		return -1;
+	}
+
+	if(TCP_Rep(socket, NicRem, 200) == -1){
+		T_MostraError();
+		exit(-1);
+	}
+
+	if(TCP_Envia(socket, NicLoc, strlen(NicLoc)) == -1){
+		T_MostraError();
+		exit(-1);
+	}
+	return socket;
 }
 
 /* Escolta indefinidament fins que arriba una línia local de conversa a   */
@@ -102,7 +172,11 @@ int MI_AcceptaConv(int SckEscMI, char *IPrem, int *portTCPrem, char *IPloc, int 
 /* arriba una línia remota.                                               */
 int MI_HaArribatLinia(int SckConvMI)
 {
-	
+	int llistaSck[2];
+	llistaSck[0] = 0;
+	llistaSck[1] = SckConvMI;
+
+	return T_HaArribatAlgunaCosa(llistaSck, 2);
 }
 
 /* Envia a través del socket de conversa de MI d’identificador            */
@@ -115,7 +189,13 @@ int MI_HaArribatLinia(int SckConvMI)
 /* enviada (sense el ‘\0’) si tot va bé (0 <= n <= 299).                  */
 int MI_EnviaLinia(int SckConvMI, const char *Linia)
 {
-	
+	int midaMiss;
+	if ((midaMiss = TCP_Envia(SckConvMI, Linia, strlen(Linia))) == -1)
+	{
+	   perror("Error");
+	   exit(-1);
+	}
+	return midaMiss;
 }
 
 /* Rep a través del socket de conversa de MI d’identificador “SckConvMI”  */
@@ -130,7 +210,13 @@ int MI_EnviaLinia(int SckConvMI, const char *Linia)
 /* (0 <= n <= 299).                                                       */
 int MI_RepLinia(int SckConvMI, char *Linia)
 {
-	
+	int midaMiss;
+	if ((midaMiss = TCP_Rep(SckConvMI, Linia, 200)) == -1)
+	{
+		perror("Error");
+	    exit(-1);
+	}
+	return midaMiss;
 }
 
 /* Acaba la conversa associada al socket de conversa de MI                */
@@ -138,7 +224,12 @@ int MI_RepLinia(int SckConvMI, char *Linia)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int MI_AcabaConv(int SckConvMI)
 {
-	
+	int socket_tancat = TCP_TancaSock(SckConvMI);
+	if (socket_tancat == -1)
+	{
+		perror("Error en tancar socket");
+		exit(-1);
+	}
 }
 
 /* Acaba l’escolta de peticions remotes de conversa que arriben a través  */
@@ -147,7 +238,12 @@ int MI_AcabaConv(int SckConvMI)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int MI_AcabaEscPetiRemConv(int SckEscMI)
 {
-	
+	int socket_tancat = TCP_TancaSock(SckEscMI);
+	if (socket_tancat == -1)
+	{
+		perror("Error en tancar socket");
+		exit(-1);
+	}
 }
 
 /* Si ho creieu convenient, feu altres funcions EXTERNES                  */
@@ -155,4 +251,3 @@ int MI_AcabaEscPetiRemConv(int SckEscMI)
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
 /* servir només en aquest mateix fitxer. Les seves declaracions es troben */
 /* a l'inici d'aquest fitxer.                                             */
-

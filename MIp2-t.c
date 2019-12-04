@@ -12,8 +12,20 @@
 /*  (si les funcions externes es cridessin entre elles, faria falta fer   */
 /*   un #include "t.h")                                                   */
 
+#include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include "MIp2-t.h"
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -37,7 +49,27 @@
 /* va bé.                                                                 */
 int TCP_CreaSockClient(const char *IPloc, int portTCPloc)
 {
-	
+	int scon, i;
+	struct sockaddr_in adrloc;
+
+	if((scon=socket(AF_INET,SOCK_STREAM,0))==-1)
+	{
+		perror("Error en socket");
+		exit(-1);
+	}
+
+	adrloc.sin_family=AF_INET;
+	adrloc.sin_port=htons(portTCPloc);
+	adrloc.sin_addr.s_addr=inet_addr(IPloc);    /* o bé: ...s_addr = INADDR_ANY */
+	for(i=0;i<8;i++){adrloc.sin_zero[i]='\0';}
+	if((bind(scon,(struct sockaddr*)&adrloc,sizeof(adrloc)))==-1)
+	{
+	perror("Error en bind");
+	close(scon);
+	exit(-1);
+	}
+
+	return scon;
 }
 
 /* Crea un socket TCP “servidor” (o en estat d’escolta – listen –) a      */
@@ -50,7 +82,34 @@ int TCP_CreaSockClient(const char *IPloc, int portTCPloc)
 /* va bé.                                                                 */
 int TCP_CreaSockServidor(const char *IPloc, int portTCPloc)
 {
-	
+	int sesc, i;
+	struct sockaddr_in adrloc;
+
+	if((sesc=socket(AF_INET,SOCK_STREAM,0))==-1)
+	{
+		perror("Error en socket");
+		exit(-1);
+	}
+
+	 adrloc.sin_family=AF_INET;
+	 adrloc.sin_port=htons(portTCPloc);
+	 adrloc.sin_addr.s_addr=inet_addr(IPloc);    /* o bé: ...s_addr = INADDR_ANY */
+	 for(i=0;i<8;i++){adrloc.sin_zero[i]='\0';}
+	 if((bind(sesc,(struct sockaddr*)&adrloc,sizeof(adrloc)))==-1)
+	 {
+	  perror("Error en bind");
+	  close(sesc);
+	  exit(-1);
+	 }
+
+	 if((listen(sesc,3))==-1)
+	 {
+	  perror("Error en listen");
+	  close(sesc);
+	  exit(-1);
+	 }
+
+	 return sesc;
 }
 
 /* El socket TCP “client” d’identificador “Sck” es connecta al socket     */
@@ -64,7 +123,20 @@ int TCP_CreaSockServidor(const char *IPloc, int portTCPloc)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int TCP_DemanaConnexio(int Sck, const char *IPrem, int portTCPrem)
 {
-	
+	int i;
+	 struct sockaddr_in adrrem;
+
+	 adrrem.sin_family=AF_INET;
+	 adrrem.sin_port=htons(portTCPrem);
+	 adrrem.sin_addr.s_addr= inet_addr(IPrem);
+	 for(i=0;i<8;i++){adrrem.sin_zero[i]='\0';}
+	 if((connect(Sck,(struct sockaddr*)&adrrem,sizeof(adrrem)))==-1)
+	 {
+	  perror("Error en connect");
+	  close(Sck);
+	  exit(-1);
+	 }
+	 return 0;
 }
 
 /* El socket TCP “servidor” d’identificador “Sck” accepta fer una         */
@@ -81,7 +153,22 @@ int TCP_DemanaConnexio(int Sck, const char *IPrem, int portTCPrem)
 /* si tot va bé.                                                          */
 int TCP_AcceptaConnexio(int Sck, char *IPrem, int *portTCPrem)
 {
-	
+	int scon;
+	struct sockaddr_in adrrem;
+
+	int long_adrrem=sizeof(adrrem);
+	if((scon=accept(Sck,(struct sockaddr*)&adrrem, &long_adrrem))==-1)
+	{
+		perror("Error en accept");
+		close(Sck);
+		exit(-1);
+	}
+
+	strcpy(IPrem, inet_ntoa(adrrem.sin_addr));
+	*portTCPrem = ntohs(adrrem.sin_port);
+
+
+	return scon;
 }
 
 /* Envia a través del socket TCP “connectat” d’identificador “Sck” la     */
@@ -92,7 +179,14 @@ int TCP_AcceptaConnexio(int Sck, char *IPrem, int *portTCPrem)
 /* Retorna -1 si hi ha error; el nombre de bytes enviats si tot va bé.    */
 int TCP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 {
-	
+	int bytes_escrits;
+	if((bytes_escrits=write(Sck,SeqBytes,LongSeqBytes))==-1)
+	 {
+		  perror("Error en write");
+		  close(Sck);
+		  exit(-1);
+	 }
+	 return bytes_escrits;
 }
 
 /* Rep a través del socket TCP “connectat” d’identificador “Sck” una      */
@@ -105,7 +199,15 @@ int TCP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 /* bytes rebuts si tot va bé.                                             */
 int TCP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 {
-	
+	int bytes_llegits;
+	if((bytes_llegits=read(Sck,SeqBytes,LongSeqBytes))==-1)
+	 {
+		  perror("Error en read");
+		  close(Sck);
+		  exit(-1);
+	 }
+	 SeqBytes[bytes_llegits] = '\0'; //??
+	 return bytes_llegits;
 }
 
 /* S’allibera (s’esborra) el socket TCP d’identificador “Sck”; si “Sck”   */
@@ -113,7 +215,7 @@ int TCP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int TCP_TancaSock(int Sck)
 {
-	
+	return close(Sck);
 }
 
 /* Donat el socket TCP d’identificador “Sck”, troba l’adreça d’aquest     */
@@ -124,7 +226,14 @@ int TCP_TancaSock(int Sck)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int TCP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portTCPloc)
 {
-	
+	struct sockaddr_in adrl;
+	 int long_adrl;
+
+	long_adrl = sizeof(adrl);
+	 if (getsockname(Sck, (struct sockaddr *)&adrl, &long_adrl) == -1)
+	 {    perror("Error en getsockname");   close(Sck);   exit(-1);  }
+	IPloc = inet_ntoa(adrl.sin_addr);
+	*portTCPloc = ntohs(adrl.sin_port);
 }
 
 /* Donat el socket TCP “connectat” d’identificador “Sck”, troba l’adreça  */
@@ -135,7 +244,14 @@ int TCP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portTCPloc)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int TCP_TrobaAdrSockRem(int Sck, char *IPrem, int *portTCPrem)
 {
-	
+	struct sockaddr_in adrr;
+	int long_adrr;
+
+	long_adrr = sizeof(adrr);
+	 if (getpeername(Sck, (struct sockaddr *)&adrr, &long_adrr) == -1)
+	 {    perror("Error en getpeername");   close(Sck);   exit(-1);  }
+	IPrem = inet_ntoa(adrr.sin_addr);
+	*portTCPrem = ntohs(adrr.sin_port);
 }
 
 /* Crea un socket UDP a l’@IP “IPloc” i #port UDP “portUDPloc”            */
@@ -147,7 +263,7 @@ int TCP_TrobaAdrSockRem(int Sck, char *IPrem, int *portTCPrem)
 /* va bé.                                                                 */
 int UDP_CreaSock(const char *IPloc, int portUDPloc);
 {
-	
+
 }
 
 /* Envia a través del socket UDP d’identificador “Sck” la seqüència de    */
@@ -160,7 +276,7 @@ int UDP_CreaSock(const char *IPloc, int portUDPloc);
 /* Retorna -1 si hi ha error; el nombre de bytes enviats si tot va bé.    */
 int UDP_EnviaA(int Sck, const char *IPrem, int portUDPrem, const char *SeqBytes, int LongSeqBytes);
 {
-	
+
 }
 
 /* Rep a través del socket UDP d’identificador “Sck” una seqüència de     */
@@ -175,14 +291,14 @@ int UDP_EnviaA(int Sck, const char *IPrem, int portUDPrem, const char *SeqBytes,
 /* Retorna -1 si hi ha error; el nombre de bytes rebuts si tot va bé.     */
 int UDP_RepDe(int Sck, char *IPrem, int *portUDPrem, char *SeqBytes, int LongSeqBytes);
 {
-	
+
 }
 
 /* S’allibera (s’esborra) el socket UDP d’identificador “Sck”.            */
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TancaSock(int Sck)
 {
-	
+
 }
 
 /* Donat el socket UDP d’identificador “Sck”, troba l’adreça d’aquest     */
@@ -193,7 +309,7 @@ int UDP_TancaSock(int Sck)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portUDPloc)
 {
-	
+
 }
 
 /* El socket UDP d’identificador “Sck” es connecta al socket UDP d’@IP    */
@@ -207,7 +323,7 @@ int UDP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portUDPloc)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_DemanaConnexio(int Sck, const char *IPrem, int portUDPrem)
 {
-	
+
 }
 
 /* Envia a través del socket UDP “connectat” d’identificador “Sck” la     */
@@ -218,7 +334,7 @@ int UDP_DemanaConnexio(int Sck, const char *IPrem, int portUDPrem)
 /* Retorna -1 si hi ha error; el nombre de bytes enviats si tot va bé.    */
 int UDP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 {
-	
+
 }
 
 /* Rep a través del socket UDP “connectat” d’identificador “Sck” una      */
@@ -229,7 +345,7 @@ int UDP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 /* Retorna -1 si hi ha error; el nombre de bytes rebuts si tot va bé.     */
 int UDP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 {
-	
+
 }
 
 /* Donat el socket UDP “connectat” d’identificador “Sck”, troba l’adreça  */
@@ -240,7 +356,7 @@ int UDP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TrobaAdrSockRem(int Sck, char *IPrem, int *portUDPrem)
 {
-	
+
 }
 
 /* Examina simultàniament i sense límit de temps (una espera indefinida)  */
@@ -252,7 +368,22 @@ int UDP_TrobaAdrSockRem(int Sck, char *IPrem, int *portUDPrem)
 /* sockets, retorna l’identificador d’aquest socket.                      */
 int T_HaArribatAlgunaCosa(const int *LlistaSck, int LongLlistaSck)
 {
-	
+	fd_set conjunt;
+	int descmax = 0, i;
+
+	FD_ZERO(&conjunt);
+
+	for(i = 0; i < LongLlistaSck; i++){
+		FD_SET(LlistaSck[i], &conjunt);
+		if(LlistaSck[i] > descmax) descmax = LlistaSck[i];
+	}
+
+	if(select(descmax+1, &conjunt, NULL, NULL, NULL) == -1) return -1;
+
+	for(i = 0; i < LongLlistaSck; i++){
+		if(FD_ISSET(LlistaSck[i], &conjunt)) return LlistaSck[i];
+	}
+    return -1;
 }
 
 /* Examina simultàniament durant "Temps" (en [ms] els sockets (poden ser  */
@@ -268,7 +399,7 @@ int T_HaArribatAlgunaCosa(const int *LlistaSck, int LongLlistaSck)
 /* ja que quan “Temps” és -1 és equivalent a ella)                        */
 int T_HaArribatAlgunaCosaEnTemps(const int *LlistaSck, int LongLlistaSck, int Temps)
 {
-	
+
 }
 
 /* Obté un missatge de text que descriu l'error produït en la darrera     */
@@ -278,11 +409,10 @@ int T_HaArribatAlgunaCosaEnTemps(const int *LlistaSck, int LongLlistaSck, int Te
 char* T_MostraError(void)
 {
  return strerror(errno);
-} 
+}
 
 /* Si ho creieu convenient, feu altres funcions EXTERNES                  */
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
 /* servir només en aquest mateix fitxer. Les seves declaracions es troben */
 /* a l'inici d'aquest fitxer.                                             */
-
