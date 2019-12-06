@@ -263,7 +263,25 @@ int TCP_TrobaAdrSockRem(int Sck, char *IPrem, int *portTCPrem)
 /* va bé.                                                                 */
 int UDP_CreaSock(const char *IPloc, int portUDPloc);
 {
-
+	if((sock=socket(AF_INET,SOCK_DGRAM,0))==-1)  
+	{   
+		perror("Error en socket");   
+		exit(-1);  
+	} 
+	strcpy(iploc,"0.0.0.0");    
+	/* 0.0.0.0 correspon a INADDR_ANY */  
+	portloc = 3000;  
+	adrloc.sin_family=AF_INET;  
+	adrloc.sin_port=htons(portloc);  
+	adrloc.sin_addr.s_addr=inet_addr(iploc);    
+	/* o bé: ...s_addr = INADDR_ANY */  
+	for(i=0;i<8;i++){adrloc.sin_zero[i]='\0';}  
+	if((bind(sock,(struct sockaddr*)&adrloc,sizeof(adrloc)))==-1)  
+	{   
+		perror("Error en bind");   
+		close(sock);   
+		exit(-1);  
+	} 
 }
 
 /* Envia a través del socket UDP d’identificador “Sck” la seqüència de    */
@@ -275,8 +293,17 @@ int UDP_CreaSock(const char *IPloc, int portUDPloc);
 /* char és un enter de 8 bits) d'una longitud >= LongSeqBytes bytes       */
 /* Retorna -1 si hi ha error; el nombre de bytes enviats si tot va bé.    */
 int UDP_EnviaA(int Sck, const char *IPrem, int portUDPrem, const char *SeqBytes, int LongSeqBytes);
-{
-
+{ 
+	adrrem.sin_family=AF_INET;  
+	adrrem.sin_port=htons(portrem); 
+	adrrem.sin_addr.s_addr= inet_addr(iprem);  
+	for(i=0;i<8;i++){adrrem.sin_zero[i]='\0';}  
+	if((bescrit=sendto(sock,buff,bllegit,0,(struct sockaddr*)&adrrem,sizeof(adrrem)))==-1)  
+	{   
+		perror("Error en sendto");   
+		close(sock);   
+		exit(-1);  
+	}
 }
 
 /* Rep a través del socket UDP d’identificador “Sck” una seqüència de     */
@@ -291,14 +318,20 @@ int UDP_EnviaA(int Sck, const char *IPrem, int portUDPrem, const char *SeqBytes,
 /* Retorna -1 si hi ha error; el nombre de bytes rebuts si tot va bé.     */
 int UDP_RepDe(int Sck, char *IPrem, int *portUDPrem, char *SeqBytes, int LongSeqBytes);
 {
-
+	ladrrem=sizeof(adrrem);  
+	if((bllegit=recvfrom(sock,buff,sizeof(buff),0,(struct sockaddr*)&adrrem,&ladrrem))==-1)  
+	{   
+		perror("Error recvfrom\n");   
+		close(sock);   
+		exit(-1); 
+	} 
 }
 
 /* S’allibera (s’esborra) el socket UDP d’identificador “Sck”.            */
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TancaSock(int Sck)
 {
-
+	return close(Sck);
 }
 
 /* Donat el socket UDP d’identificador “Sck”, troba l’adreça d’aquest     */
@@ -309,7 +342,14 @@ int UDP_TancaSock(int Sck)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portUDPloc)
 {
-
+	long_adrl = sizeof(adrl);  
+	if (getsockname(scon, (struct sockaddr *)&adrl, &long_adrl) == -1)  
+	{    
+		perror("Error en getsockname");   
+		close(scon);   
+		exit(-1);  
+	}  
+	printf("Sock LOC: @IP %s,TCP, #port %d\n",inet_ntoa(adrl.sin_addr),ntohs(adrl.sin_port));
 }
 
 /* El socket UDP d’identificador “Sck” es connecta al socket UDP d’@IP    */
@@ -323,7 +363,16 @@ int UDP_TrobaAdrSockLoc(int Sck, char *IPloc, int *portUDPloc)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_DemanaConnexio(int Sck, const char *IPrem, int portUDPrem)
 {
-
+	adrrem.sin_family=AF_INET;  
+	adrrem.sin_port=htons(portrem);  
+	adrrem.sin_addr.s_addr= inet_addr(iprem);  
+	for(i=0;i<8;i++){adrrem.sin_zero[i]='\0';}  
+	if((connect(scon,(struct sockaddr*)&adrrem,sizeof(adrrem)))==-1)  
+	{   
+		perror("Error en connect");   
+		close(scon);   
+		exit(-1);  
+	} 
 }
 
 /* Envia a través del socket UDP “connectat” d’identificador “Sck” la     */
@@ -334,7 +383,12 @@ int UDP_DemanaConnexio(int Sck, const char *IPrem, int portUDPrem)
 /* Retorna -1 si hi ha error; el nombre de bytes enviats si tot va bé.    */
 int UDP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 {
-
+	if((bescrit=write(1,buff,bllegit))==-1)  
+	{   
+		perror("Error en write");   
+		close(sock);   
+		exit(-1);
+	}
 }
 
 /* Rep a través del socket UDP “connectat” d’identificador “Sck” una      */
@@ -345,7 +399,12 @@ int UDP_Envia(int Sck, const char *SeqBytes, int LongSeqBytes)
 /* Retorna -1 si hi ha error; el nombre de bytes rebuts si tot va bé.     */
 int UDP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 {
-
+	if((bllegit=read(0,buff,sizeof(buff)))==-1)  
+	{   
+		perror("Error en read");   
+		close(sock);   
+		exit(-1);  
+	} 
 }
 
 /* Donat el socket UDP “connectat” d’identificador “Sck”, troba l’adreça  */
@@ -356,7 +415,14 @@ int UDP_Rep(int Sck, char *SeqBytes, int LongSeqBytes)
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int UDP_TrobaAdrSockRem(int Sck, char *IPrem, int *portUDPrem)
 {
-
+	long_adrr2 = sizeof(adrr2);  
+	if (getpeername(scon, (struct sockaddr *)&adrr2, &long_adrr2) == -1)  
+	{    
+		perror("Error en getpeername");   
+		close(scon);   
+		exit(-1);  
+	}  
+	printf("Sock REM: @IP %s,TCP,#port %d\n",inet_ntoa(adrr2.sin_addr),ntohs(adrr2.sin_port)); 
 }
 
 /* Examina simultàniament i sense límit de temps (una espera indefinida)  */
