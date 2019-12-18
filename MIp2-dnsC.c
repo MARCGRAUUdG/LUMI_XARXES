@@ -33,11 +33,19 @@
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé     */
 int DNSc_ResolDNSaIP(const char *NomDNS, char *IP)
 {
+	struct hostent *dadesHOST;
+	struct in_addr adrHOST;
+
+	dadesHOST = gethostbyname(NomDNSini);
+	if (dadesHOST == NULL) return -1;
 	
+	adrHOST.s_addr = *((unsigned long *)dadesHOST->h_addr_list[0]);
+	strcpy(ip,(char*)inet_ntoa(adrHOST));
+	strcpy(FQDN,(*dadesHOST).h_name);
+
+	return 0;
 }
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
 /* servir només en aquest mateix fitxer. Les seves declaracions es troben */
 /* a l'inici d'aquest fitxer.                                             */
-
-
