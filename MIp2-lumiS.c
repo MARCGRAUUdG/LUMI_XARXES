@@ -27,6 +27,7 @@ int Log_CreaFitx(const char *NomFitxLog);
 int Log_Escriu(int FitxLog, const char *MissLog);
 int Log_TancaFitx(int FitxLog);
 
+
 /* Definició de funcions EXTERNES, és a dir, d'aquelles que es cridaran   */
 /* des d'altres fitxers, p.e., int LUMIs_FuncioExterna(arg1, arg2...) { } */
 /* En termes de capes de l'aplicació, aquest conjunt de funcions externes */
@@ -43,7 +44,11 @@ int Log_TancaFitx(int FitxLog);
 /* bé.                                                                    */
 int Log_CreaFitx(const char *NomFitxLog)
 {
-	
+	char diaHora[50];
+	DiaHora(diaHora);
+	int fitxerIden = FitxLog = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
+	Log_Escriu(fitxerIden, diaHora);
+	return fitxerIden;//retorna l'identificador del fitxer?
 }
 
 /* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
@@ -54,15 +59,49 @@ int Log_CreaFitx(const char *NomFitxLog)
 /* "log" (sense el '\0') si tot va bé                                     */
 int Log_Escriu(int FitxLog, const char *MissLog)
 {
-	
+	strcat(MissLog, "\n"); //inserim salt de línia
+	int n = write(FitxLog, MissLog, strlen(MissLog));
+	if (n < 0)
+	{
+		return -1;
+	}
+	return n-1;
 }
 
 /* Tanca el fitxer de "log" d'identificador "FitxLog".                    */
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
 int Log_TancaFitx(int FitxLog)
 {
-	
+	return close(FitxLog);
+}
+
+int LUMI_S_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char *IP, int port)
+{
+
+}
+
+int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
+{
+
+}
+int LUMI_S_PeticioLoc(char *miss, char *domini, char *username)
+{
+
+}
+
+int LUMI_S_RespostaLoc(char *miss, char *domini, char *username)
+{
+
+}
+
+int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
+{
+
+}
+
+int LUMI_S_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log)
+{
+
 }
 
 /* Si ho creieu convenient, feu altres funcions INTERNES                  */
-

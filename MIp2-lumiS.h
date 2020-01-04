@@ -6,6 +6,12 @@
 /* Autors: X, Y                                                           */
 /*                                                                        */
 /**************************************************************************/
+int LUMI_S_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char *IP, int port);
+int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients);
+int LUMI_S_PeticioLoc(char *miss, char *domini, char *username);
+int LUMI_S_RespostaLoc(char *miss, char *domini, char *username);
+int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients);
+int LUMI_S_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log);
 
 /* Declaració de funcions EXTERNES de lumiS.c, és a dir, d'aquelles       */
 /* funcions que es faran servir en un altre fitxer extern a lumiS.c,      */
