@@ -77,12 +77,41 @@ int Log_TancaFitx(int FitxLog)
 
 int LUMI_S_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char *IP, int port)
 {
+	char usuari[299];
+	int tipus, client = 0;
+	bool trobat = false;
 
+	while (!trobat && client != nClients)
+	{
+		if (strcpy(taulaClients[i].nomClient, usuari) == 0))
+		{
+			trobat = true;
+			strcpy(taulaClients[i].ipUDP, IP);
+			taulaClients[i].portUDP = port;
+			return 0; //tot ok, ha trobat el  client
+		}
+	}
+	return 1; //no ha trobat l'usuari
 }
 
 int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
 {
+	char usuari[299];
+	int tipus, client = 0;
+	bool trobat = false;
 
+	while (!trobat && client != nClients)
+	{
+		if (strcpy(taulaClients[i].nomClient, usuari) == 0))
+		{
+			trobat = true;
+			strcpy(taulaClients[i].ipUDP, "-");
+			taulaClients[i].portUDP = 0;
+			taulaClients[i].fallades = 0;
+			return 0; //tot ok, ha trobat el  client
+		}
+	}
+	return 1; //no ha trobat l'usuari
 }
 int LUMI_S_PeticioLoc(char *miss, char *domini, char *username)
 {
