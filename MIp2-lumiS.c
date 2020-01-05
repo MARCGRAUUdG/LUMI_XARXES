@@ -14,6 +14,8 @@
 
 #include "t.h"
 #include "dnsC.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -113,14 +115,26 @@ int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
 	}
 	return 1; //no ha trobat l'usuari
 }
+
 int LUMI_S_PeticioLoc(char *miss, char *domini, char *username)
 {
+	username = strtok(miss, "@#");
+	username[username.sizeof()] = '\0';
+	domini = strtok(miss, "@#");
+	domini[domini.sizeof()] = '\0';
 
+	return 0;
 }
 
 int LUMI_S_RespostaLoc(char *miss, char *domini, char *username)
 {
+	char *res = strtok(miss, "@#");
+	username = strtok(miss, "@#");
+	username[username.sizeof()] = '\0';
+	domini = strtok(miss, "@#");
+	domini[domini.sizeof()] = '\0';
 
+	return 0;
 }
 
 int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
