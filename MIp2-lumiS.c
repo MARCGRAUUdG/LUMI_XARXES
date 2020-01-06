@@ -139,7 +139,18 @@ int LUMI_S_RespostaLoc(char *miss, char *domini, char *username)
 
 int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
 {
+	int Sck = UDP_CreaSock("0.0.0.0", PORT_UDP);
 
+	char nomLog[100];
+	sprintf(nomLog, "MIp2-nodelumi-%s.log", nomDomini);
+	Log_CreaFitx(nomLog);
+
+	for(i = 0; i < nClients; i++){
+		fscanf(cfg, "%s\n", taulaClients[i].nomClient);
+		strcpy(taulaClients[i].ipUDP, "-");
+		taulaClients[i].fallades = 0;
+		taulaClients[i].portUDP = 0;
+	}
 }
 
 int LUMI_S_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log)
