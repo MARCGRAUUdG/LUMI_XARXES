@@ -14,3 +14,7 @@
 /* així les funcions seran conegudes en ell.                              */
 /* En termes de capes de l'aplicació, aquest conjunt de funcions          */
 /* EXTERNES formen la interfície de la capa LUMI, la part del client      */
+
+int LUMI_C_CrearSocketUDP(int port, char *IP);
+
+int LUMI_C_TancarSocketUDP(int Sck)

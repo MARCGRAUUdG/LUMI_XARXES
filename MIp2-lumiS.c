@@ -77,7 +77,7 @@ int Log_TancaFitx(int FitxLog)
 	return close(FitxLog);
 }
 
-int LUMI_S_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char *IP, int port)
+int LUMIs_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char *IP, int port)
 {
 	char usuari[299];
 	int tipus, client = 0;
@@ -96,7 +96,7 @@ int LUMI_S_Registrar(char *miss, struct adrUDP *taulaClients, int nClients, char
 	return 1; //no ha trobat l'usuari
 }
 
-int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
+int LUMIs_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
 {
 	char usuari[299];
 	int tipus, client = 0;
@@ -116,7 +116,7 @@ int LUMI_S_Desregistrar(char *miss, struct adrUDP *taulaClients, int nClients)
 	return 1; //no ha trobat l'usuari
 }
 
-int LUMI_S_PeticioLoc(char *miss, char *domini, char *username)
+int LUMIs_PeticioLoc(char *miss, char *domini, char *username)
 {
 	username = strtok(miss, "@#");
 	username[username.sizeof()] = '\0';
@@ -126,7 +126,7 @@ int LUMI_S_PeticioLoc(char *miss, char *domini, char *username)
 	return 0;
 }
 
-int LUMI_S_RespostaLoc(char *miss, char *domini, char *username)
+int LUMIs_RespostaLoc(char *miss, char *domini, char *username)
 {
 	char *res = strtok(miss, "@#");
 	username = strtok(miss, "@#");
@@ -137,7 +137,7 @@ int LUMI_S_RespostaLoc(char *miss, char *domini, char *username)
 	return 0;
 }
 
-int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
+int LUMIs_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
 {
 	int Sck = UDP_CreaSock("0.0.0.0", PORT_UDP);
 
@@ -153,7 +153,7 @@ int LUMI_S_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP 
 	}
 }
 
-int LUMI_S_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log)
+int LUMIs_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log)
 {
 
 }

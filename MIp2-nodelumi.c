@@ -36,20 +36,20 @@ int main(int argc,char *argv[])
    log = crearLogServidor(nomDomini);
 
    llistaSockets[0] = 0;
-   llistaSockets[1] = LUMI_S_Inicialitzar(domini, nombreClients, cfg, taulaClients); //mirar com es crida
+   llistaSockets[1] = LUMIs_Inicialitzar(domini, nombreClients, cfg, taulaClients); //mirar com es crida
 
    printf("# per acabar");
 
    while (!final)
    {
-     canal = LUMI_C_HaArribatAlgunaCosa(llistaSockets, -1, 2); //mirar com es crida
+     canal = LUMIc_HaArribatAlgunaCosa(llistaSockets, -1, 2); //mirar com es crida
      if (canal == 0)
      {
        nBytes = read(0,teclat,sizeof(teclat));
   		 if(teclat[0] == '#') fi = true;
      } else
      {
-       LUMI_S_ServeixPeticio(Sck, domini, taulaClients, nombreClients, log); //mirar com es crida
+       LUMIs_ServeixPeticio(Sck, domini, taulaClients, nombreClients, log); //mirar com es crida
      }
    }
    tancaLog(log);

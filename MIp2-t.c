@@ -482,7 +482,30 @@ int T_HaArribatAlgunaCosa(const int *LlistaSck, int LongLlistaSck)
 /* ja que quan “Temps” és -1 és equivalent a ella)                        */
 int T_HaArribatAlgunaCosaEnTemps(const int *LlistaSck, int LongLlistaSck, int Temps)
 {
+	fd_set conjunt;
+	int descmax = 0, i;
+	
+	FD_ZERO(&conjunt);
 
+	for(i = 0; i < LongLlistaSck; i++){
+		FD_SET(LlistaSck[i], &conjunt);
+		if(LlistaSck[i] > descmax) descmax = LlistaSck[i];
+	}
+	
+	if(Temps == -1){
+		if(select(descmax+1, &conjunt, NULL, NULL, NULL) == -1) return -1;
+		for(i = 0; i < LongLlistaSck; i++){
+			if(FD_ISSET(LlistaSck[i], &conjunt)) return LlistaSck[i];
+		}
+	}
+	else{
+		struct timeval tv = {0, Temps*1000};
+		if(select(descmax+1, &conjunt, NULL, NULL, &tv) == -1) return -1;
+		for(i = 0; i < LongLlistaSck; i++){
+			if(FD_ISSET(LlistaSck[i], &conjunt)) return LlistaSck[i];
+		}
+	}
+	return -1;
 }
 
 /* Obté un missatge de text que descriu l'error produït en la darrera     */
