@@ -4,7 +4,7 @@
 /* Fitxer lumiC.c que implementa la capa d'aplicació de MI, sobre la capa */
 /* de transport UDP (fent crides a la "nova" interfície de la capa UDP o  */
 /* "nova" interfície de sockets), però només la part servidora            */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                                      */
 /*                                                                        */
 /**************************************************************************/
 
@@ -28,6 +28,10 @@
 int Log_CreaFitx(const char *NomFitxLog);
 int Log_Escriu(int FitxLog, const char *MissLog);
 int Log_TancaFitx(int FitxLog);
+int codificarRespostaLocalitzarS(char *missLoc, int codi, char *res)/*???*/
+int codificarRespostaRegiste(int codi, char tipus, char *res)
+int RegistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat, char *IP, int port)
+int DesregistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat)
 
 
 /* Definició de funcions EXTERNES, és a dir, d'aquelles que es cridaran   */
@@ -35,92 +39,12 @@ int Log_TancaFitx(int FitxLog);
 /* En termes de capes de l'aplicació, aquest conjunt de funcions externes */
 /* formen la interfície de la capa LUMI, la part del servidor             */
 
-/* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
-/* servir només en aquest mateix fitxer. Les seves declaracions es troben */
-/* a l'inici d'aquest fitxer.                                             */
 
-/* Crea un fitxer de "log" de nom "NomFitxLog".                           */
-/* "NomFitxLog" és un "string" de C (vector de chars imprimibles acabat   */
-/* en '\0') d'una longitud qualsevol.                                     */
-/* Retorna -1 si hi ha error; l'identificador del fitxer creat si tot va  */
-/* bé.                                                                    */
-int Log_CreaFitx(const char *NomFitxLog)
+int TractarPeticioLoc(char *miss, char *domini, char *username, char *dominiPeticio, int nClients, char IPentrada[16], int portentrada, int Sck, int &logstruct adrUDP &*taulaClients)
 {
-	char diaHora[50];
-	DiaHora(diaHora);
-	int fitxerIden = FitxLog = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
-	Log_Escriu(fitxerIden, diaHora);
-	return fitxerIden;//retorna l'identificador del fitxer?
-}
-
-/* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
-/* "log" "MissLog".                                                       */
-/* "MissLog" és un "string" de C (vector de chars imprimibles acabat      */
-/* en '\0') d'una longitud qualsevol.                                     */
-/* Retorna -1 si hi ha error; el nombre de caràcters del missatge de      */
-/* "log" (sense el '\0') si tot va bé                                     */
-int Log_Escriu(int FitxLog, const char *MissLog)
-{
-	strcat(MissLog, "\n"); //inserim salt de línia
-	int n = write(FitxLog, MissLog, strlen(MissLog));
-	if (n < 0)
-	{
-		return -1;
-	}
-	return n-1;
-}
-
-/* Tanca el fitxer de "log" d'identificador "FitxLog".                    */
-/* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
-int Log_TancaFitx(int FitxLog)
-{
-	return close(FitxLog);
-}
-
-int LUMIs_Registrar(struct adrUDP *taulaClients, int nClients, char *miss, char *IP, int port)
-{
-	char usuari[299];
-	int tipus, client = 0;
-	bool trobat = false;
-
-	while (!trobat && client != nClients)
-	{
-		if (strcpy(taulaClients[i].nomClient, usuari) == 0))
-		{
-			trobat = true;
-			strcpy(taulaClients[i].ipUDP, IP);
-			taulaClients[i].portUDP = port;
-			return 0; //tot ok, ha trobat el  client
-		}
-	}
-	return 1; //no ha trobat l'usuari
-}
-
-int LUMIs_Desregistrar(struct adrUDP *taulaClients, int nClients, char *miss)
-{
-	char usuari[299];
-	int tipus, client = 0;
-	bool trobat = false;
-
-	while (!trobat && client != nClients)
-	{
-		if (strcpy(taulaClients[i].nomClient, usuari) == 0))
-		{
-			trobat = true;
-			strcpy(taulaClients[i].ipUDP, "-");
-			taulaClients[i].portUDP = 0;
-			taulaClients[i].fallades = 0;
-			return 0; //tot ok, ha trobat el  client
-		}
-	}
-	return 1; //no ha trobat l'usuari
-}
-
-int LUMIs_PeticioLoc(char *miss, char *domini, char *username, char *dominiPeticio, int nClients, char IPentrada[16], int portentrada, int Sck, int &logstruct adrUDP &*taulaClients)
-{
-	username = strtok(miss, "@#");
+	username = strtok(miss, "@");
 	username[username.sizeof()] = '\0';
-	domini = strtok(miss, "@#");
+	domini = strtok(miss, "#");
 	domini[domini.sizeof()] = '\0';
 
 	if (domini == dominiPeticio)
@@ -194,48 +118,125 @@ int LUMIs_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *
 	}
 }
 
-int LUMIs_ServeixPeticio(int Sck, char *nomDomini, struct adrUDP *taulaClients, int nClients, int log)
+int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, int nUsuaris, int fitxLog)
 {
-	char missatge[300], IP[16], resPet[2], resLoc[300];
-	int port, bytes = UDP_RepDe(Sck, IP, &port, missatge, sizeof(missatge));
+	char missatge[300], IP[16], resRegDes[2], resLoc[300];
+	int port, bytes;
+	bytes = UDP_RepDe(Sck, IP, &port, missatge, sizeof(missatge));
+
+	escriureLiniaLog(fitxLog, 'R', IP, port, missatge, bytes);
 
 	if (miss[0] == 'R')
 	{
-		escriureLiniaLog(log, 'R', IP, port, miss, bytes);
-
-		int reg = LUMIs_Registrar(taulaClients, nClients, missatge, IP, port);
-		codificarRespostaRegiste(reg, 'C', resPet);
-		int bytes = UDP_EnviaA(Sck, IP, port, resPet, sizeof(resPet));
-
-		escriureLiniaLog(log, 'E', IP, port, resPet, bytes);
+		int codiReg = RegistrarUsuari(taulaUsuaris, nUsuaris, missatge, IP, port);
+		codificarRespostaRegiste(codiReg, 'C', resRegDes);
+		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
+		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}
 	else if (miss[0] == 'D')
 	{
-		escriureLiniaLog(log, 'R', IP, port, miss, bytes);
-
-		int des = LUMIs_Desregistrar(taulaClients, nClients, missatge);
-		codificarRespostaRegiste(reg, 'C', resPet);
-		int bytes = UDP_EnviaA(Sck, IP, port, resPet, sizeof(resPet));
-
-		escriureLiniaLog(log, 'E', IP, port, resPet, bytes);
+		int codDes = DesregistrarUsuari(taulaUsuaris, nUusaris, missatge);
+		codificarRespostaRegiste(codDes, 'C', resRegDes);
+		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
+		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}
 	else if (miss[0] == 'L')
 	{
-		escriureLiniaLog(log, 'R', IP, port, miss, bytes);
+		TractarPeticioLoc(miss+1, domini, nClients, IP, port, Sck, log, taulaClients);
 
-		LUMI_S_PeticioLoc(miss, petDomini, username, nomDomini, nClients, IP, port, Sck, log, taulaClients);
-
-		escriureLiniaLog(log, 'E', IP, port, resPet, bytes);
+		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 
 	}
 	else if (miss[0] == 'S')
 	{
-		escriureLiniaLog(log, 'R', IP, port, miss, bytes);
 
 		LUMIs_RespostaLoc(miss, petDomini, username, nomDomini, nClients, IP, port, Sck, log, taulaClients);
 
-		escriureLiniaLog(log, 'E', IP, port, resPet, bytes);
+		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}
+}
+
+/* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
+/* servir només en aquest mateix fitxer. Les seves declaracions es troben */
+/* a l'inici d'aquest fitxer.                                             */
+
+int RegistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat, char *IP, int port)
+{
+	char usuari[299], IPPort[25];
+	int numClients = 0;
+  //agafem  el nom d'usuari del missatge de registre del client
+	strcpy(usuari,missatgeCodificat+1); //missatge+1    RUsername
+
+	sprintf(IPPort, "%s-%d", IP, port);  //guardem en una string el format desitjat per guardar la IP + el port
+
+	while (numClients != nUsuaris)
+	{
+		if (strcmp(taulaUsuaris[i].usuari, usuari) == 0))  //si té el mateix nom d'usuari
+		{
+			strcpy(taulaUsuaris[i].sckLUMI, IPPort);  //hi posem la ip i el port en el format desitjat, de l'usuari que s'ha connectat
+			return 0; //tot ok, ha trobat el  client
+		}
+		numClients++;
+	}
+	return 1; //no ha trobat l'usuari
+
+}
+
+int DesregistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat)
+{
+	char usuari[299];
+	int numClients = 0;
+	//agafem  el nom d'usuari del missatge de desregistre del client
+	strcpy(usuari,missatgeCodificat+1); //missatge+1    RUsername
+
+	while (numClients != nClients)
+	{
+		if (strcmp(taulaUsuaris[i].usuari, usuari) == 0))
+		{
+			strcpy(taulaUsuaris[i].sckLUMI, "0");
+			return 0; //tot ok, ha trobat el  client
+		}
+		numClients++;
+	}
+	return 1; //no ha trobat l'usuari
+}
+
+/* Crea un fitxer de "log" de nom "NomFitxLog".                           */
+/* "NomFitxLog" és un "string" de C (vector de chars imprimibles acabat   */
+/* en '\0') d'una longitud qualsevol.                                     */
+/* Retorna -1 si hi ha error; l'identificador del fitxer creat si tot va  */
+/* bé.                                                                    */
+int Log_CreaFitx(const char *NomFitxLog)
+{
+	char diaHora[50];
+	DiaHora(diaHora);
+	int fitxerIden = FitxLog = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
+	Log_Escriu(fitxerIden, diaHora);
+	return fitxerIden;//retorna l'identificador del fitxer?
+}
+
+/* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
+/* "log" "MissLog".                                                       */
+/* "MissLog" és un "string" de C (vector de chars imprimibles acabat      */
+/* en '\0') d'una longitud qualsevol.                                     */
+/* Retorna -1 si hi ha error; el nombre de caràcters del missatge de      */
+/* "log" (sense el '\0') si tot va bé                                     */
+int Log_Escriu(int FitxLog, const char *MissLog)
+{
+	strcat(MissLog, "\n"); //inserim salt de línia
+	int n = write(FitxLog, MissLog, strlen(MissLog));
+	if (n < 0)
+	{
+		return -1;
+	}
+	return n-1;
+}
+
+/* Tanca el fitxer de "log" d'identificador "FitxLog".                    */
+/* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
+int Log_TancaFitx(int FitxLog)
+{
+	return close(FitxLog);
 }
 
 /* Si ho creieu convenient, feu altres funcions INTERNES                  */
