@@ -23,6 +23,8 @@
 /* int FuncioInterna(arg1, arg2...);                                      */
 /* Com a mínim heu de fer les següents funcions INTERNES:                 */
 
+int codificarMissatgeRegistre(char *text, char tipus, char *miss);
+int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *res);
 int Log_CreaFitx(const char *NomFitxLog);
 int Log_Escriu(int FitxLog, const char *MissLog);
 int Log_TancaFitx(int FitxLog);
@@ -32,112 +34,71 @@ int Log_TancaFitx(int FitxLog);
 /* En termes de capes de l'aplicació, aquest conjunt de funcions externes */
 /* formen la interfície de la capa LUMI, la part del client               */
 
-/* Codifica el misstge de registre/desregistre segons el protocol acordat */
-/* Retorna els bytes del missatge codificat o -1 si hi ha error			  */
-int codificarMissatgeRegistre(char *text, char tipus, char *miss){
-    if(tipus == 'R' || tipus == 'D'){ //Registre o Desregistre
-		return sprintf(miss, "%c%s", tipus, text);
-	}
-	else return -1;
-}
-
-/* Codifica el missatge de localització en format L@Mi(trucat)#@Mi(trucador) */
-/* Retorna els bytes del missatge codificat					 				 */
-int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *res)
-{
-	return sprintf(res, "L%s#%s", trucat, trucador);
-}
-
-
-/* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
-/* servir només en aquest mateix fitxer. Les seves declaracions es troben */
-/* a l'inici d'aquest fitxer.                                             */
-
-/* Crea un fitxer de "log" de nom "NomFitxLog".                           */
-/* "NomFitxLog" és un "string" de C (vector de chars imprimibles acabat   */
-/* en '\0') d'una longitud qualsevol.                                     */
-/* Retorna -1 si hi ha error; l'identificador del fitxer creat si tot va  */
-/* bé.                                                                    */
-int Log_CreaFitx(const char *NomFitxLog)
-{
-	int fitxerIden;
-	fitxerIden = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
-	return fitxerIden;//retorna l'identificador del fitxer
-}
-
-/* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
-/* "log" "MissLog".                                                       */
-/* "MissLog" és un "string" de C (vector de chars imprimibles acabat      */
-/* en '\0') d'una longitud qualsevol.                                     */
-/* Retorna -1 si hi ha error; el nombre de caràcters del missatge de      */
-/* "log" (sense el '\0') si tot va bé                                     */
-int Log_Escriu(int FitxLog, const char *MissLog)
-{
-	strcat(MissLog, "\n"); //inserim salt de línia
-	int n = write(FitxLog, MissLog, strlen(MissLog));
-	if (n < 0)
-	{
-		return -1;
-	}
-	return n-1;
-}
-
-/* Tanca el fitxer de "log" d'identificador "FitxLog".                    */
-/* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
-int Log_TancaFitx(int FitxLog)
-{
-	return close(FitxLog);
-}
-
 /* Mètodes previs per al fitxer de Logs 								  */
 
-/* Obre el fitxer de log, o en crea un si no existeix					  */
-/* Retorna -1 si hi ha error, 1 si no. 									  */
-int obrirCrearFitxLogClient(char *MI)
+/* Crea el nom del fitxer de log, i seguidament el crea, o l'obre si ja existeix	*/
+/* Retorna -1 si hi ha error, o l'identificador del fitxer si tot ha anat bé        */
+int LUMIc_obrirOCrearFitxLogClient(char *adrMI)
 {
 	char nomfitx[50];
-	sprintf(nomfitx, "p2p-%s.log", MI);
+	sprintf(nomfitx, "p2p-%s.log", adrMI);
 	
 	return Log_CreaFitx(nomfitx);
 }
 
 /* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
-int escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *miss, int nBytes)
+/* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
+int LUMIc_escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *miss, int nBytes)
 {
 	char liniaLog[100];
 	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, miss, nBytes);
 	return Log_Escriu(nomfitx, liniLog);
 }
 
-/* Mètodes del client 													  */
 
-/* Crea el missatge per registrar segons protocol i s'envia al servidor per efectuar el registre
- * Té un timeout de 10ms i s'intenta fins 3 vegades 					  */
-int LUMIc_Registrar(int Sck, char *adrMI, char *IPdom, int log)
+/* Mètodes del client*/
+
+/*Separa l'Usuari i el Domini d'una adreça MI en format usuari@domini*/
+void separaUsuariDomini(char *adrMI, char *usuari, char *domini)
 {
-	int i = 0, j = 0, nBytes, tSck[1], portAux;
-	char nom[100], aux, domini[100], miss[150], IPaux[16];
+	int i=0; j=0;
+	char aux;
 	
-	do{
+	while (adrMI[i]!= '@'){
 		aux = adrMI[i];
-		nom[i] = aux;
+		usuari[i] = aux;
 		i++;
-	}while(aux != '@');
+	}	
 	
-	nom[i-1] = '\0';
-	while(aux != '\0'){
+	usuari[i] = '\0';
+	i++;
+	
+	while(adrMI[i] != '\0'){
 		aux = adrMI[i];
 		domini[j] = aux;
 		j++; i++;
 	}
 	domini[j] = '\0';
+}
+
+/* Crea el missatge per registrar segons protocol i s'envia al servidor per efectuar el registre */
+/* Té un timeout de 10ms i s'intenta fins 3 vegades 					  */
+int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
+{
+	char usuari[299], domini[20], missatgeCodificat[300];
+	int nBytes, tSck[1], portAux;
+	char IPaux[16];
 	
-	nBytes = codificarMissatgeRegistre(nom, 'R', miss);
+	separaUsuariDomini(adrMI,usuari,domini);  //obtenim l'usuari i el domini de l'adreça MI
 	
-	ResolDNSaIP(domini, IPdom);
+	int numBytes;
+	
+	numBytes = codificarMissatgeRegistre(usuari, 'R', missatgeCodificat);
+	
+	ResolDNSaIP(domini, IPDom);
 		
-	nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, miss, nBytes);
-	escriureLiniaLog(log, 'E', IPdom, PORT_UDP, miss, nBytes);  //E d'enviat
+	nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, missatgeCodificat, nBytes);
+	escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, missatgeCodificat, nBytes);  //E d'enviat
 	
 	tSck[0] = Sck;
 	i = 0;
@@ -178,7 +139,7 @@ int LUMIc_Desregistrar(int Sck, char *adrMI, char *IPdom, int log)
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
-		int canal = HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		int canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
 		if(canal < 0) i++;
 		else{
 			nBytes = UDP_RepDe(Sck, IPaux, &portAux, miss, sizeof(miss));
@@ -239,5 +200,62 @@ int LUMIc_TancarSocketUDP(int Sck)
 	return close(Sck);
 }
 
+
 /* Si ho creieu convenient, feu altres funcions INTERNES                  */
 
+
+/* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
+/* servir només en aquest mateix fitxer. Les seves declaracions es troben */
+/* a l'inici d'aquest fitxer.                                             */
+
+/* Codifica el misstge de registre/desregistre segons el protocol acordat */
+/* Retorna el nombre de bytes del missatge ja codificat, -1 altrament     */
+int codificarMissatgeRegistre(char *usuari, char tipus, char *miss){
+    if(tipus == 'R' || tipus == 'D'){ //Registre o Desregistre
+		return sprintf(miss, "%c%s", tipus, usuari);
+	}
+	else return -1;
+}
+
+/* Codifica el missatge de localització en format L@Mi(trucat)#@Mi(trucador) */
+/* Retorna el nombre bytes del missatge ja codificat					 				 */
+int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *res)
+{
+	return sprintf(res, "L%s#%s", trucat, trucador);
+}
+
+/* Crea un fitxer de "log" de nom "NomFitxLog".                           */
+/* "NomFitxLog" és un "string" de C (vector de chars imprimibles acabat   */
+/* en '\0') d'una longitud qualsevol.                                     */
+/* Retorna -1 si hi ha error; l'identificador del fitxer creat si tot va  */
+/* bé.                                                                    */
+int Log_CreaFitx(const char *NomFitxLog)
+{
+	int fitxerIden;
+	fitxerIden = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
+	return fitxerIden;//retorna l'identificador del fitxer
+}
+
+/* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
+/* "log" "MissLog".                                                       */
+/* "MissLog" és un "string" de C (vector de chars imprimibles acabat      */
+/* en '\0') d'una longitud qualsevol.                                     */
+/* Retorna -1 si hi ha error; el nombre de caràcters del missatge de      */
+/* "log" (sense el '\0') si tot va bé                                     */
+int Log_Escriu(int FitxLog, const char *MissLog)
+{
+	strcat(MissLog, "\n"); //inserim salt de línia
+	int n = write(FitxLog, MissLog, strlen(MissLog));
+	if (n < 0)
+	{
+		return -1;
+	}
+	return n-1;
+}
+
+/* Tanca el fitxer de "log" d'identificador "FitxLog".                    */
+/* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé.    */
+int Log_TancaFitx(int FitxLog)
+{
+	return close(FitxLog);
+}

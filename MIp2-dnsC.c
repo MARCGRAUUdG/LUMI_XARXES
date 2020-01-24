@@ -5,7 +5,7 @@
 /* o més ben dit, que encapsula les funcions de la interfície de sockets  */
 /* de la part DNS, en unes altres funcions més simples i entenedores: la  */
 /* "nova" interfície de la capa DNS (part client).                        */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                                         */
 /*                                                                        */
 /**************************************************************************/
 
@@ -36,7 +36,7 @@ int DNSc_ResolDNSaIP(const char *NomDNS, char *IP)
 	struct hostent *dadesHOST;
 	struct in_addr adrHOST;
 
-	dadesHOST = gethostbyname(NomDNSini);
+	dadesHOST = gethostbyname(NomDNS);
 	if (dadesHOST == NULL) return -1;
 	
 	adrHOST.s_addr = *((unsigned long *)dadesHOST->h_addr_list[0]);

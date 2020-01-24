@@ -15,6 +15,10 @@
 /* En termes de capes de l'aplicació, aquest conjunt de funcions          */
 /* EXTERNES formen la interfície de la capa LUMI, la part del client      */
 
+int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPdom, int log);
+
+
+
 int LUMI_C_CrearSocketUDP(int port, char *IP);
 
 int LUMI_C_TancarSocketUDP(int Sck)
