@@ -23,8 +23,8 @@
 /* int FuncioInterna(arg1, arg2...);                                      */
 /* Com a mínim heu de fer les següents funcions INTERNES:                 */
 
-int codificarMissatgeRegistre(char *text, char tipus, char *miss);
-int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *res);
+int codificarMissatgeRegistre(char *usuari, char tipus, char *missatgeCodificat);
+int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *missatgeCodificat);
 int Log_CreaFitx(const char *NomFitxLog);
 int Log_Escriu(int FitxLog, const char *MissLog);
 int Log_TancaFitx(int FitxLog);
@@ -40,18 +40,18 @@ int Log_TancaFitx(int FitxLog);
 /* Retorna -1 si hi ha error, o l'identificador del fitxer si tot ha anat bé        */
 int LUMIc_obrirOCrearFitxLogClient(char *adrMI)
 {
-	char nomfitx[50];
+	char nomfitx[40];
 	sprintf(nomfitx, "p2p-%s.log", adrMI);
-	
+
 	return Log_CreaFitx(nomfitx);
 }
 
 /* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
 /* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
-int LUMIc_escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *miss, int nBytes)
+int LUMIc_escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes)
 {
-	char liniaLog[100];
-	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, miss, nBytes);
+	char liniaLog[300];
+	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, missatge, bytes);
 	return Log_Escriu(nomfitx, liniLog);
 }
 
@@ -63,16 +63,16 @@ void separaUsuariDomini(char *adrMI, char *usuari, char *domini)
 {
 	int i=0; j=0;
 	char aux;
-	
+
 	while (adrMI[i]!= '@'){
 		aux = adrMI[i];
 		usuari[i] = aux;
 		i++;
-	}	
-	
+	}
+
 	usuari[i] = '\0';
 	i++;
-	
+
 	while(adrMI[i] != '\0'){
 		aux = adrMI[i];
 		domini[j] = aux;
@@ -88,18 +88,18 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	char usuari[299], domini[20], missatgeCodificat[300];
 	int nBytes, tSck[1], portAux;
 	char IPaux[16];
-	
+
 	separaUsuariDomini(adrMI,usuari,domini);  //obtenim l'usuari i el domini de l'adreça MI
-	
+
 	int numBytes;
-	
+
 	numBytes = codificarMissatgeRegistre(usuari, 'R', missatgeCodificat);
-	
+
 	ResolDNSaIP(domini, IPDom);
-		
+
 	nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, missatgeCodificat, nBytes);
 	escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, missatgeCodificat, nBytes);  //E d'enviat
-	
+
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
@@ -107,8 +107,8 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 		if(canal < 0) i++;
 		else{
 			nBytes = UDP_RepDe(Sck, IPaux, &portAux, miss, sizeof(miss));
-			escriureLiniaLog(log, 'R', IPaux, portAux, miss, nBytes);
-			
+			escriureLiniaLog(fitxLog, 'R', IPaux, portAux, miss, nBytes);
+
 			if(miss[0] != 'C') return -1;
 			else return miss[1] - '0';
 		}
@@ -118,35 +118,35 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 
 /* Crea el missatge per desregistrar segons protocol i l'envia al servidor per desregistrar-se.
  * Té un timeout de 10ms i s'intenta fins a 3 vegades */
-int LUMIc_Desregistrar(int Sck, char *adrMI, char *IPdom, int log)
+int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 {
-	int i = 0, nBytes, portAux, tSck[1];
-	char nom[100], aux, miss[150], IPaux[16];
-	
+	int i = 0, bytes, portAux, tSck[1];
+	char nom[100], aux, missatgeCodificat[300], IPaux[16];
+
 	do{
 		aux = adrMI[i];
 		nom[i] = aux;
 		i++;
 	}while(aux != '@');
-	
+
 	nom[i-1] = '\0';
-		
-	nBytes = codificarMissatgeRegistre(nom, 'D', miss);
-		
-	nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, miss, nBytes);
-	escriureLiniaLog(log, 'E', IPdom, PORT_UDP, miss, nBytes);  //E d'enviat
-	
+
+	bytes = codificarMissatgeRegistre(nom, 'D', missatgeCodificat);
+
+	bytes = UDP_EnviaA(Sck, IPDom, PORT_UDP, missatgeCodificat, bytes);
+	escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, missatgeCodificat, bytes);  //E d'enviat
+
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
 		int canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
 		if(canal < 0) i++;
 		else{
-			nBytes = UDP_RepDe(Sck, IPaux, &portAux, miss, sizeof(miss));
-			escriureLiniaLog(log, 'R', IPaux, portAux, miss, nBytes);
-			
-			if(miss[0] != 'C') return -1;
-			else return miss[1] - '0';
+			bytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(miss));
+			escriureLiniaLog(fitxLog, 'R', IPaux, portAux, missatgeCodificat, bytes);
+
+			if(missatgeCodificat[0] != 'C') return -1;
+			else return missatgeCodificat[1] - '0';
 		}
 	}
 	return -1;
@@ -154,29 +154,29 @@ int LUMIc_Desregistrar(int Sck, char *adrMI, char *IPdom, int log)
 
 /* Crea el format PLUMI i l'envia al servidor. Espera resposta 3 cops amb un timeout de 50ms).
  * Retorna -1 si hi ha error (no rep res), 1 si tot va bé. */
-int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPdom, char *MIloc, char *ipTCP, int *portTCP, int log)
+int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog)
 {
-	char res[300], IPrem[16], miss[300];
-	int compt = 0, portRem, nBytes;
-		
+	char res[300], IPrem[16], missatgeCodificat[300];
+	int compt = 0, portRem, bytes;
+
 	codificarMissatgeLocalitzacio(MIloc, adrMI, res);
-	
+
 	while(compt < 3){	//s'intenta 3 vegades
-		nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, res, strlen(res));
-		escriureLiniaLog(log, 'E', IPdom, PORT_UDP, res, nBytes);  //E d'enviat
-		
+		bytes = UDP_EnviaA(Sck, IPDom, PORT_UDP, res, strlen(res));
+		escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, res, bytes);  //E d'enviat
+
 		int llistaSck[1];
 		llistaSck[0] = Sck;
-		
+
 		if(HaArribatAlgunaCosaEnTemps(llistaSck, 1, 50) == Sck){
-			nBytes = UDP_RepDe(Sck, IPrem, &portRem, miss, 300);
-			escriureLiniaLog(log, 'R', IPrem, portRem, miss, nBytes);
-						
-			if(miss[1] == '1'){
-				extreureIPport(ipTCP, portTCP, miss);
+			bytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
+			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, bytes);
+
+			if(missatgeCodificat[1] == '1'){
+				extreureIPport(ipTCP, portTCP, missatgeCodificat);
 				return 1;
 			}
-			else return miss[1] - '0';
+			else return missatgeCodificat[1] - '0';
 		}
 		compt++;
 	}
@@ -185,12 +185,13 @@ int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPdom, char *MIloc, char 
 
 /* Crea un socket UDP 													  */
 /* Retorna el socket UDP creat 											  */
-int LUMIc_CrearSocketUDP(int port, char *IP){
-	int sck;
-	if((sck = UDP_CreaSock(IP, port)) == -1){
+int LUMIc_CrearSocketUDP(int port, char *IP)
+{
+	int Sck;
+	if((Sck = UDP_CreaSock(IP, port)) == -1){
 		return -1;
 	}
-	return sck;
+	return Sck;
 }
 
 /* Tanca Sck															  */
@@ -198,6 +199,19 @@ int LUMIc_CrearSocketUDP(int port, char *IP){
 int LUMIc_TancarSocketUDP(int Sck)
 {
 	return close(Sck);
+}
+
+int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int fitxLog)
+{
+	char IPservidor[16], missatge[300]. missatgeCodificat[300];
+	int portservidor, bytes;
+
+	bytes = UDP_RepDe(Sck, IPservidor, portservidor, missatge, 300);
+	escriureLiniaLog(fitxLog, 'R', IPservidor, portservidor, missatge, bytes);
+
+	codificarMissatgeLocalitzacio(missatgeCodificat, ipTCP, portTCP, codi, missatgeCodificat);
+	bytes = UDP_EnviaA(Sck, IPservidor, portservidor, missatgeCodificat, strlen(missatgeCodificat));
+	escriureLiniaLog(fitxLog, 'E', IPservidor, portservidor, missatgeCodificat, bytes);
 }
 
 
@@ -210,18 +224,19 @@ int LUMIc_TancarSocketUDP(int Sck)
 
 /* Codifica el misstge de registre/desregistre segons el protocol acordat */
 /* Retorna el nombre de bytes del missatge ja codificat, -1 altrament     */
-int codificarMissatgeRegistre(char *usuari, char tipus, char *miss){
+int codificarMissatgeRegistre(char *usuari, char tipus, char *missatgeCodificat)
+{
     if(tipus == 'R' || tipus == 'D'){ //Registre o Desregistre
-		return sprintf(miss, "%c%s", tipus, usuari);
+		return sprintf(missatgeCodificat, "%c%s", tipus, usuari);
 	}
 	else return -1;
 }
 
 /* Codifica el missatge de localització en format L@Mi(trucat)#@Mi(trucador) */
 /* Retorna el nombre bytes del missatge ja codificat					 				 */
-int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *res)
+int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *missatgeCodificat)
 {
-	return sprintf(res, "L%s#%s", trucat, trucador);
+	return sprintf(missatgeCodificat, "L%s#%s", trucat, trucador);
 }
 
 /* Crea un fitxer de "log" de nom "NomFitxLog".                           */
