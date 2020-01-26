@@ -63,13 +63,18 @@ int main(int argc,char *argv[])
  	int portServidor;
  	int portRemot;
  	int portLocal;
+	int SckUDP;
  	char miss[200], missCod[200];
  	char IPRemot[20];
  	char IPLocal[20];
+	char IPDom[20];
  	char nickLoc[200], nickRem[200], nickLocCod[200], nickRemCod[200];
  	char novaConversa = 'a';
+	char MIlocal[300];
+	char MIremot[300];
 
  	while (novaConversa!='N'){
+
  		printf("Entra el teu nick:\n ");
  		int aux_nickLoc = read(0, nickLoc, sizeof(nickLoc));
  		nickLoc[aux_nickLoc-1] = '\0';
@@ -86,7 +91,18 @@ int main(int argc,char *argv[])
 
  		printf("Socket servidor creat amb @IP: %s, i port TCP: %d\n",IPLocal,portServidor); //Mostrem informació del socket servidor
 
- 		printf("Introdueix la @IP a on et vols connectar:\n ");
+		SckUDP = LUMIc_CrearSocketUDP(0/*port 0*/, IPLocal); //Creem socket udp;
+
+		do {
+			printf("Escriu adreça MI:"\n);
+			int lonMI = read(0, MIlocal, 300);
+			MIlocal[lonMi-1] = '\0';
+			int fitxLog = LUMIc_obrirOCrearFitxLogClient(MIlocal);
+			int missRegistrar = LUMIc_RegistrarUsuari(SckUDP, MIlocal, IPDom, fitxLog);
+			if (missRegistrar == -1)	printf("Aquest usuari no està donoat d'alta, prova amb un altre usuari.\n", );
+		} while(missRegistrar == -1);
+
+ 		/*printf("Introdueix la @IP a on et vols connectar:\n ");
 
  		int ha_arribat = MI_HaArribatPetiConv(sesc);
 
@@ -115,7 +131,47 @@ int main(int argc,char *argv[])
  			//Mostrem informació dels sockets connectats
  			printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
  			printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
- 		}
+ 		}*/
+
+		while (/*no acabem connexió UDP*/)
+		{
+
+			int ha_arribat = LUMIc_HaArribatAlgunaCosa(SckUDP, sesc, -1/*temps*/);//ffalta fer (crida ha arribat alguna cosa en temps de la capa t)
+
+			if(ha_arribat == -1) //Error
+	 		{
+	 			perror("Error, a l'arribar alguna cosa");
+	 			return -1;
+	 		}
+	 		else if (ha_arribat == 0) //Entrem informació per teclat
+	 		{
+				printf("Escriu el nick amb qui et vols connectar:\n");
+	 			scanf("%s\n", MIremot);
+
+				int loc = LUMIc_Localitzar(SckUDP, MIremot, IPDom, MIlocal, IPRemot, portRemot, fitxLog);
+
+				if (loc == -1)
+				{
+					perror("Error, no hi ha resposta del servidor");
+		 			return -1;
+				} else
+				{
+					scon = MI_DemanaConv(IPRemot, portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod);
+					printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
+					printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
+				}
+	 		}
+			else if (ha_arribat == sesc)
+			{
+				scon = MI_DemanaConv(sesc, IPRemot, &portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod);
+				printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
+				printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
+			}
+	 		else
+			{
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 1/*codi?*/, fitxLog);
+	 		}
+		}
 
  		//Ja ens hem connectat!
 
@@ -142,7 +198,7 @@ int main(int argc,char *argv[])
  		printf("Ja podeu començar a xatejar!\n");
 
  		do{
- 			if((ha_arribat = MI_HaArribatLinia(scon))==-1) exit(-1); //ERROR!
+ 			if((ha_arribat = LUMIc_HaArribatAlgunaCosa(SckUDP, sesc, -1/*temps*/))==-1) exit(-1); //ERROR!
  			if (ha_arribat == 0) //Envia missatge
  			{
  			  midaMiss = read(0, miss, sizeof(miss));
@@ -158,7 +214,7 @@ int main(int argc,char *argv[])
  			  midaMiss = MI_EnviaLinia(scon, missCod); //Enviem el missatge
 
  			}
- 			else //Rep missatge
+ 			else if (ha_arribat == scon)//Rep missatge
  			{
  				midaMiss = MI_RepLinia(scon, missCod); //Rebem el missatge
 
@@ -192,6 +248,10 @@ int main(int argc,char *argv[])
  					}
  				}
  			}
+			else
+			{
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 1/*codi?*/, fitxLog);
+			}
 
  		} while (miss[0]!='#');	//Mentre el missatge no sigui la marca de fi
 
@@ -201,6 +261,10 @@ int main(int argc,char *argv[])
  		printf("Vols iniciar una nova conversa? (S,N)\n");
  		scanf(" %c", &novaConversa); //posem espai en blanc al principi per alliberar el buffer
  	}
+
+	desr = LUMIc_DesregistrarUsuari(SckUDP, MIlocal, IPDom, fitxLog);
+	LUMIc_TancarSocketUDP(SckUDP);
+	tancaLog(fitxLog);
 
  	printf("Gracies per utilitzar el nostre servei, fins la proxima!\n");
 
