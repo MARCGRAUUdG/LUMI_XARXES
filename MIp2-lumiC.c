@@ -103,7 +103,7 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
-		int canal = HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		int canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
 		if(canal < 0) i++;
 		else{
 			nBytes = UDP_RepDe(Sck, IPaux, &portAux, miss, sizeof(miss));
@@ -168,7 +168,7 @@ int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPDom, char *MIloc, char 
 		int llistaSck[1];
 		llistaSck[0] = Sck;
 
-		if(HaArribatAlgunaCosaEnTemps(llistaSck, 1, 50) == Sck){
+		if(T_HaArribatAlgunaCosaEnTemps(llistaSck, 1, 50) == Sck){
 			bytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
 			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, bytes);
 
@@ -201,12 +201,18 @@ int LUMIc_TancarSocketUDP(int Sck)
 	return close(Sck);
 }
 
+/* Retorna la funció d'T_HaArribatAlgunaCosaEnTemps */
+int LUMIc_HaArribatAlgunaCosa(int *llistaSck, int midaLlista, int temps)
+{
+	return T_HaArribatAlgunaCosaEnTemps(llistaSck, midaLlista, temps);
+}
+
 int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int fitxLog)
 {
 	char IPservidor[16], missatge[300]. missatgeCodificat[300];
 	int portservidor, bytes;
 
-	bytes = UDP_RepDe(Sck, IPservidor, portservidor, missatge, 300);
+	bytes = UDP_RepDe(Sck, IPservidor, &portservidor, missatge, 300);
 	escriureLiniaLog(fitxLog, 'R', IPservidor, portservidor, missatge, bytes);
 
 	codificarMissatgeLocalitzacio(missatgeCodificat, ipTCP, portTCP, codi, missatgeCodificat);
