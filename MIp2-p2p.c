@@ -5,7 +5,7 @@
 /* l'aplicació de MI amb l'agent de LUMI integrat, sobre les capes        */
 /* d'aplicació de MI i LUMI (fent crides a les interfícies de les capes   */
 /* MI -fitxers mi.c i mi.h- i LUMI -lumi.c i lumi.h- ).                   */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 

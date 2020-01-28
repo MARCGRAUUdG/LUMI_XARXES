@@ -16,6 +16,7 @@
 #include "dnsC.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -32,6 +33,7 @@ int codificarRespostaLocalitzarS(char *missLoc, int codi, char *res)/*???*/
 int codificarRespostaRegiste(int codi, char tipus, char *res)
 int RegistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat, char *IP, int port)
 int DesregistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCodificat)
+int TractarPeticioLoc(char *miss, char *dominiPeticio, int nClients, char *IPEntrada, int portEntrada, int Sck, int log, struct usuaris *taulaClients)
 
 
 /* Definició de funcions EXTERNES, és a dir, d'aquelles que es cridaran   */
@@ -39,83 +41,20 @@ int DesregistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatg
 /* En termes de capes de l'aplicació, aquest conjunt de funcions externes */
 /* formen la interfície de la capa LUMI, la part del servidor             */
 
-
-int TractarPeticioLoc(char *miss, char *domini, char *username, char *dominiPeticio, int nClients, char IPentrada[16], int portentrada, int Sck, int &logstruct adrUDP &*taulaClients)
-{
-	username = strtok(miss, "@");
-	username[username.sizeof()] = '\0';
-	domini = strtok(miss, "#");
-	domini[domini.sizeof()] = '\0';
-
-	if (domini == dominiPeticio)
-	{
-		char IPPeticio[16];
-		int portPeticio;
-
-		int posicioUsuari = CercarUsername(taulaClients, IPPeticio, &portPeticio, username, nClients);
-
-		if (taulaClients[posicioUsuari].ipUDP != "-")
-		{
-			bytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, miss, strlen(miss));
-			escriureLiniaLog(log, 'E', IPPeticio, portPeticio, miss, nBytes);
-			taulaClients[posicioUsuari].fallades++;
-			if (taulaClients[posicioUsuari].fallades++ >= 3)
-			{
-				strcpy(taulaClients[posicioUsuari].ipUDP, "-");
-					taulaClients[posicioUsuari].fallades = 0;
-					taulaClients[posicioUsuari].portUDP = 0;
-			}
-
-		} else
-		{
-			char respostaLoc[300];
-			if (posicioUsuari == -1)
-			{
-				formatRespostaLocalitzarS(respostaLoc, 2, respostaLoc);
-			} else
-			{
-				formatRespostaLocalitzarS(respostaLoc, 3, respostaLoc);
-			}
-			bytes = UDP_EnviaA(Sck, IPentrada, portentrada, respostaLoc, strlen(respostaLoc));
-			escriureLiniaLog(log, 'E', IPentrada, portentrada, respostaLoc, bytes);
-		}
-	} else
-	{
-			ResolDNSaIP(domini, petIP);
-			bytes = UDP_EnviaA(Sck, IPPeticio, PORT_UDP, miss, strlen(miss));
-			escriureLiniaLog(log, 'E', IPPeticio, PORT_UDP, miss, bytes);
-	}
-
-	return 0;
-}
-
-int LUMIs_RespostaLoc(char *miss, char *domini, char *username, char *dominiPeticio, int nClients, char IPentrada[16], int portentrada, int Sck, int &logstruct adrUDP &*taulaClients)
-{
-	char *res = strtok(miss, "@#");
-	username = strtok(miss, "@#");
-	username[username.sizeof()] = '\0';
-	domini = strtok(miss, "@#");
-	domini[domini.sizeof()] = '\0';
-
-
-
-	return 0;
-}
-
 int LUMIs_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct adrUDP *taulaClients)
 {
-	int Sck = UDP_CreaSock("0.0.0.0", PORT_UDP);
+	int socketServidor = UDP_CreaSock("0.0.0.0", 6000);
 
 	char nomLog[100];
 	sprintf(nomLog, "nodelumi-%s.log", nomDomini);
-	Log_CreaFitx(nomLog);//despres?
+	Log_CreaFitx(nomLog);
 
 	for(i = 0; i < nClients; i++){
-		fscanf(cfg, "%s\n", taulaClients[i].nomClient);
-		strcpy(taulaClients[i].ipUDP, "-");
-		taulaClients[i].fallades = 0;
-		taulaClients[i].portUDP = 0;
+		fscanf(cfg, "%s\n", taulaClients[i].usuari);
+		strcpy(taulaClients[i].sckLUMI, "0");
 	}
+
+	return socketServidor;
 }
 
 int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, int nUsuaris, int fitxLog)
@@ -143,17 +82,9 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 	else if (miss[0] == 'L')
 	{
 		TractarPeticioLoc(miss+1, domini, nClients, IP, port, Sck, log, taulaClients);
-
-		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
-
 	}
-	else if (miss[0] == 'S')
-	{
 
-		LUMIs_RespostaLoc(miss, petDomini, username, nomDomini, nClients, IP, port, Sck, log, taulaClients);
-
-		escriureLiniaLog(fitxLog, 'E', IP, port, resRegDes, bytes);
-	}
+	return 1;
 }
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
@@ -212,8 +143,10 @@ int Log_CreaFitx(const char *NomFitxLog)
 	DiaHora(diaHora);
 	int fitxerIden = FitxLog = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
 	Log_Escriu(fitxerIden, diaHora);
-	return fitxerIden;//retorna l'identificador del fitxer?
+	return fitxerIden;//retorna l'identificador del fitxer
 }
+
+
 
 /* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
 /* "log" "MissLog".                                                       */
@@ -249,9 +182,100 @@ int codificarRespostaRegiste(int codi, char tipus, char *res)
 	return sprintf(res, "%c%d", prefix, codi);
 }
 
-int codificarRespostaLocalitzarS(char *missLoc, int codi, char *res)/*???*/
+int codificarRespostaLocalitzacio(int codi, char *res, char *adrMI, char *IP, int port)
 {
-	sprintf(res, "T%d", codi);
-	strcpy(res+2, missLoc+1);
-	return 1;
+  return sprintf(res, "S%d%s#%s#%d", cod,adrMI,IP,port);
+}
+
+//Busca un usuari a la taula de Usuaris registrats, retorna la posició a la taula d'Usuaris si el troba, -1 si no existeix a la taula.
+int buscarUsuariRegistrat(struct usuaris *taulaUsuaris, char *usernamePeticio, int numClients, char * IPPeticio, int * portPeticio)
+{
+	int i=0;
+  bool trobat = false;
+
+	while (i<numClients && !trobat)
+	{
+		if (strcmp(taulaUsuaris[i],usernamePeticio)==0) trobat = true;
+		else i++;
+	}
+
+	if (trobat)
+	{
+		char AdrMIUsuari[25] = taulaUsuaris[i].sckLUMI;
+		char IPUsuari[16];
+		IPUsuari = strtok(AdrMIUsuari, "-");
+		int portUsuari;
+		portUsuari = AdrMIUsuari - '0';
+		printf("%d", portUsuari);
+
+		strcpy(IPPeticio, IPUsuari);
+		strcpy(portPeticio, portUsuari);
+		return i;
+	}
+	else return -1;
+}
+
+int TractarPeticioLoc(char *miss, char *dominiPeticio, int nClients, char *IPEntrada, int portEntrada, int Sck, int log, struct usuaris *taulaClients)
+{
+
+	char usernamePeticio[74];
+	usernamePeticio= strtok(miss, "@");
+	usernamePeticio[usernamePeticio.sizeof()] = '\0';
+	char dominiPeticio[74];
+	dominiPeticio = strtok(miss, "#");
+	dominiPeticio[dominiPeticio.sizeof()] = '\0';
+
+	char IPPeticio[16];
+	char missRespLoc[300];
+  int numBytes;
+
+	if((strcmp(dominiPeticio,nostreDomini))==0) //si es demana connectar amb un usuari del nostre domini...
+	{
+
+		int portPeticio, posUsuari;
+
+		posUsuari = buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numClients, IPPeticio, portPeticio); //busquem un usuari
+
+		if (posUsuari==-1) //no s'ha trobat l'usuari
+		{
+			codificarRespostaLocalitzacio(3,missRespLoc, "0", "0", 0);
+			numBytes = UDP_EnviaA(Sck, IPEntrada, portEntrada, missRespLoc, strlen(missRespLoc));
+			escriureLiniaLog(log,'E', IPEntrada, portEntrada, missRespLoc, numBytes);
+		}
+		else if (strcmp(taulaUsuaris[posUsuari].sckLUMI,"0")==0)
+		{
+			char adrMIPeticio[149];
+			adrMIPeticio = sprintf("%d@%d",usernamePeticio, dominiPeticio);
+			codificarRespostaLocalitzacio(2,missRespLoc, adrMIPeticio, IPPeticio , portPeticio);
+			numBytes = UDP_EnviaA(Sck, IPEntrada, portEntrada, missRespLoc, strlen(missRespLoc));
+			escriureLiniaLog(log,'E', IPEntrada, portEntrada, missRespLoc, numBytes);
+		}
+		{
+			char respostaLoc[300];
+			if (posicioUsuari == -1)
+			{
+				formatRespostaLocalitzarS(respostaLoc, 2, respostaLoc);
+			} else
+			{
+				formatRespostaLocalitzarS(respostaLoc, 3, respostaLoc);
+			}
+			bytes = UDP_EnviaA(Sck, IPentrada, portEntrada, respostaLoc, strlen(respostaLoc));
+			escriureLiniaLog(log, 'E', IPentrada, portEntrada, respostaLoc, bytes);
+		}
+	}
+	else //si no es el domini que correspon, busca el domini corresponent...
+	{
+			if (ResolDNSaIP(dominiPeticio, IPPeticio)==-1) //domini erroni, no existeix cap domini amb el nom dominiPeticio
+			{
+				codificarRespostaLocalitzacio(1,missRespLoc, "0", "0", 0);
+				numBytes = UDP_EnviaA(Sck, IPEntrada, portEntrada, missRespLoc, strlen(missRespLoc));
+				escriureLiniaLog(log,'E', IPEntrada, portEntrada, missRespLoc, numBytes);
+			}
+			else{
+				bytes = UDP_EnviaA(Sck, IPPeticio, 6000, miss, strlen(miss));
+				escriureLiniaLog(log, 'E', IPPeticio, 6000, miss, bytes);
+			}
+	 }
+
+	return 0;
 }

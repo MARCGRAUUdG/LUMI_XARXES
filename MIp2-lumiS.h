@@ -20,7 +20,5 @@ struct usuaris{
     char sckLUMI[25];
 }
 
-int LUMIs_PeticioLoc(char *miss, char *domini, char *username);
-int LUMIs_RespostaLoc(char *miss, char *domini, char *username);
 int LUMIs_Inicialitzar(char *nomDomini, int nClients, FILE *cfg, struct usuaris *taulaClients);
 int LUMIs_ServeixPeticio(int Sck, char *nomDomini, struct usuaris *taulaClients, int nClients, int log);

@@ -55,32 +55,6 @@ int LUMIc_escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char 
 	return Log_Escriu(nomfitx, liniLog);
 }
 
-
-/* Mètodes del client*/
-
-/*Separa l'Usuari i el Domini d'una adreça MI en format usuari@domini*/
-void separaUsuariDomini(char *adrMI, char *usuari, char *domini)
-{
-	int i=0; j=0;
-	char aux;
-
-	while (adrMI[i]!= '@'){
-		aux = adrMI[i];
-		usuari[i] = aux;
-		i++;
-	}
-
-	usuari[i] = '\0';
-	i++;
-
-	while(adrMI[i] != '\0'){
-		aux = adrMI[i];
-		domini[j] = aux;
-		j++; i++;
-	}
-	domini[j] = '\0';
-}
-
 /* Crea el missatge per registrar segons protocol i s'envia al servidor per efectuar el registre */
 /* Té un timeout de 10ms i s'intenta fins 3 vegades 					  */
 int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
@@ -97,8 +71,8 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 
 	ResolDNSaIP(domini, IPDom);
 
-	nBytes = UDP_EnviaA(Sck, IPdom, PORT_UDP, missatgeCodificat, nBytes);
-	escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, missatgeCodificat, nBytes);  //E d'enviat
+	nBytes = UDP_EnviaA(Sck, IPdom, 6000, missatgeCodificat, nBytes);
+	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 
 	tSck[0] = Sck;
 	i = 0;
@@ -133,8 +107,8 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 
 	bytes = codificarMissatgeRegistre(nom, 'D', missatgeCodificat);
 
-	bytes = UDP_EnviaA(Sck, IPDom, PORT_UDP, missatgeCodificat, bytes);
-	escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, missatgeCodificat, bytes);  //E d'enviat
+	bytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, bytes);
+	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, bytes);  //E d'enviat
 
 	tSck[0] = Sck;
 	i = 0;
@@ -162,8 +136,8 @@ int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPDom, char *MIloc, char 
 	codificarMissatgeLocalitzacio(MIloc, adrMI, res);
 
 	while(compt < 3){	//s'intenta 3 vegades
-		bytes = UDP_EnviaA(Sck, IPDom, PORT_UDP, res, strlen(res));
-		escriureLiniaLog(fitxLog, 'E', IPDom, PORT_UDP, res, bytes);  //E d'enviat
+		bytes = UDP_EnviaA(Sck, IPDom, 6000, res, strlen(res));
+		escriureLiniaLog(fitxLog, 'E', IPDom, 6000, res, bytes);  //E d'enviat
 
 		int llistaSck[1];
 		llistaSck[0] = Sck;
@@ -243,6 +217,29 @@ int codificarMissatgeRegistre(char *usuari, char tipus, char *missatgeCodificat)
 int codificarMissatgeLocalitzacio(char *trucat, char *trucador, char *missatgeCodificat)
 {
 	return sprintf(missatgeCodificat, "L%s#%s", trucat, trucador);
+}
+
+/*Separa l'Usuari i el Domini d'una adreça MI en format usuari@domini*/
+void separaUsuariDomini(char *adrMI, char *usuari, char *domini)
+{
+	int i=0; j=0;
+	char aux;
+
+	while (adrMI[i]!= '@'){
+		aux = adrMI[i];
+		usuari[i] = aux;
+		i++;
+	}
+
+	usuari[i] = '\0';
+	i++;
+
+	while(adrMI[i] != '\0'){
+		aux = adrMI[i];
+		domini[j] = aux;
+		j++; i++;
+	}
+	domini[j] = '\0';
 }
 
 /* Crea un fitxer de "log" de nom "NomFitxLog".                           */
