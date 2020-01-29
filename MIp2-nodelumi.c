@@ -10,7 +10,17 @@
 
 /* Inclusió de llibreries, p.e. #include <stdio.h> o #include "meu.h"     */
 
-#include "lumiS.h"
+#include "MIp2-lumiS.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h> 
+#include <arpa/inet.h> 
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -21,10 +31,39 @@
 
 int main(int argc,char *argv[])
 {
- /* Declaració de variables, p.e., int n;                                 */
+   /* Declaració de variables, p.e., int n;                                 */
+   FILE *cfg;
+   char domini[100/*assignat pel protocol?*/], entrada_t[300];
+   int nombreUsuaris, llistaSockets[2], nBytes, canal, log;
+   int final = 0;
+   /* Expressions, estructures de control, crides a funcions, etc.          */
 
- /* Expressions, estructures de control, crides a funcions, etc.          */
+	printf("hola\n");
+   cfg = fopen("MIp2-nodelumi.cfg", "r"); //r per poder llegir i escriure.
+   fscanf(cfg, "%s", domini);
+   fscanf(cfg, "%d", &nombreUsuaris);
+   struct usuaris taulaUsuaris[nombreUsuaris];
+   log = LUMIs_obrirOCrearFitxLogServidor(domini);
 
+   llistaSockets[0] = 0;
+   llistaSockets[1] = LUMIs_Inicialitzar(domini, nombreUsuaris, cfg, taulaUsuaris); //mirar com es crida
+
+   printf("# per acabar\n");
+
+   while (final==0)
+   {
+     canal = LUMIs_HaArribatAlgunaCosa(llistaSockets, 2, -1); //mirar com es crida
+     if (canal == 0)
+     {
+       nBytes = read(0,entrada_t,sizeof(entrada_t));
+  		 if(entrada_t[0] == '#') final = 1;
+     } else
+     {
+       LUMIs_ServeixPeticio(canal, domini, taulaUsuaris, nombreUsuaris, log); //mirar com es crida
+     }
+   }
+   LUMIs_tancaLog(log);
+   return 0;
  }
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */

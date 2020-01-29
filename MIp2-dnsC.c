@@ -5,13 +5,27 @@
 /* o més ben dit, que encapsula les funcions de la interfície de sockets  */
 /* de la part DNS, en unes altres funcions més simples i entenedores: la  */
 /* "nova" interfície de la capa DNS (part client).                        */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                                         */
 /*                                                                        */
 /**************************************************************************/
 
 /* Inclusió de llibreries, p.e. #include <sys/types.h> o #include "meu.h" */
 /*  (si les funcions EXTERNES es cridessin entre elles, faria falta fer   */
 /*   un #include "lumi.h")                                                */
+
+#include <stdlib.h> 
+#include <stdio.h> 
+#include <string.h> 
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <netinet/in.h> 
+#include <arpa/inet.h> 
+#include <unistd.h>
+#include <netdb.h>
+#include <time.h>
+#include "MIp2-dnsC.h"
 
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
@@ -33,11 +47,27 @@
 /* Retorna -1 si hi ha error; un valor positiu qualsevol si tot va bé     */
 int DNSc_ResolDNSaIP(const char *NomDNS, char *IP)
 {
+	struct hostent *dadesHOST;
+	struct in_addr **adrHOST;
+	int i;
+
+	if ((dadesHOST = gethostbyname(NomDNS)) == NULL) 
+	{
+		herror("gethostbyname");
+		return -1;
+	}
+
+	adrHOST = (struct in_addr **) dadesHOST->h_addr_list;
 	
+	for(i = 0; adrHOST[i] != NULL; i++) 
+	{
+		strcpy(IP , inet_ntoa(*adrHOST[i]));
+		return 0;
+	}
+	
+	return -1;
 }
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
 /* servir només en aquest mateix fitxer. Les seves declaracions es troben */
 /* a l'inici d'aquest fitxer.                                             */
-
-

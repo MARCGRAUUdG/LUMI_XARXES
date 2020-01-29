@@ -5,14 +5,14 @@
 /* l'aplicació de MI amb l'agent de LUMI integrat, sobre les capes        */
 /* d'aplicació de MI i LUMI (fent crides a les interfícies de les capes   */
 /* MI -fitxers mi.c i mi.h- i LUMI -lumi.c i lumi.h- ).                   */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 
 /* Inclusió de llibreries, p.e. #include <stdio.h> o #include "meu.h"     */
 
-#include "mi.h"
-#include "lumiC.h"
+#include "MIp2-mi.h"
+#include "MIp2-lumiC.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,27 +57,53 @@ void obtenirIPGlobal(char *ipGlobal){
 
 int main(int argc,char *argv[])
 {
-  int midaMiss;
+    int midaMiss;
  	int sesc=0, scon=0;
  	int ipServidor;
  	int portServidor;
  	int portRemot;
  	int portLocal;
+	int SckUDP;
  	char miss[200], missCod[200];
  	char IPRemot[20];
  	char IPLocal[20];
+	char IPDom[20];
  	char nickLoc[200], nickRem[200], nickLocCod[200], nickRemCod[200];
  	char novaConversa = 'a';
+	char MILocal[300];
+	char MIRemot[300];
+	
+	int respostaRegistre;
+	int respostaLocalitzacio;
+	int bytesMI;
+	int fitxerLog;
+	int llistaSck[3];
+	int ha_arribat;
+	int hiHaConnexio=0;
+	int usuariDesconectat = 0;
+	int respostaDesregistre=0;
+	int intentsDesregistre=0;
+	
+	obtenirIPGlobal(IPLocal); //Obtenim una IP que no sigui la de retorn
+	
+	if((SckUDP = LUMIc_CrearSocketUDP(0, IPLocal)) == -1) exit(-1);  //creem socket UDP
+	do{
+		printf("Entra la teva adreça MI:\n ");
+		bytesMI = read(0,MILocal,sizeof(MILocal));
+		MILocal[bytesMI-1] = '\0';
+		fitxerLog = LUMIc_obrirOCrearFitxLogClient(MILocal);
+		respostaRegistre = LUMIc_RegistrarUsuari(SckUDP, MILocal, IPDom, fitxerLog);
+		if (respostaRegistre == -1) printf("Error amb el servidor o amb el format de la peticio\n");
+		else if (respostaRegistre == 1) printf("L'usuari entrat no existeix, i per tant, no esta donat d'alta\n");
+	} while (respostaRegistre != 0);	
 
  	while (novaConversa!='N'){
+
  		printf("Entra el teu nick:\n ");
  		int aux_nickLoc = read(0, nickLoc, sizeof(nickLoc));
  		nickLoc[aux_nickLoc-1] = '\0';
 
  		sprintf(nickLocCod, "%c%03d%s", 'N', strlen(nickLoc), nickLoc); //Codifiquem el nick seguint el protocol establert
-
-
- 		obtenirIPGlobal(IPLocal); //Obtenim una IP que no sigui la de retorn
 
  		printf("Escriu el port TCP del socket servidor:\n ");
  		scanf("%d", &portServidor);
@@ -86,63 +112,77 @@ int main(int argc,char *argv[])
 
  		printf("Socket servidor creat amb @IP: %s, i port TCP: %d\n",IPLocal,portServidor); //Mostrem informació del socket servidor
 
- 		printf("Introdueix la @IP a on et vols connectar:\n ");
+		llistaSck[0] = SckUDP; //socket UDP
+		llistaSck[1] = sesc;   //socket TCP
+		llistaSck[2] = 0;      //teclat
 
- 		int ha_arribat = MI_HaArribatPetiConv(sesc);
-
- 		if(ha_arribat == -1) //Error
- 		{
- 			perror("Error, a l'arribar alguna cosa");
- 			return -1;
- 		}
- 		else if (ha_arribat == 0) //Entrem informació per teclat
- 		{
- 			scanf("%s", IPRemot);
-
- 			printf("Introdueix el port TCP al que et vols connectar:\n");
- 			scanf("%d", &portRemot);
-
- 			scon = MI_DemanaConv(IPRemot, portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod);
-
- 			//Mostrem informació dels sockets connectats
- 			printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
- 			printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
-
- 		}
- 		else { //Ens arriba una petició de connexió
- 			scon = MI_AcceptaConv(sesc, IPRemot, &portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod);
-
- 			//Mostrem informació dels sockets connectats
- 			printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
- 			printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
- 		}
-
- 		//Ja ens hem connectat!
-
- 		if(nickRemCod[0] != 'N') //Si el missatge no segueix el protocol establert
- 		{
- 			perror("El nick no segueix el protocol!");
- 			close(scon);
- 			exit(-1);
- 		}
-
- 		//Si segueix el protocol estipulat, descodifiquem el nickRemCod
- 		int midaNick = 100*(nickRemCod[1]-'0') + 10*(nickRemCod[2]-'0') + (nickRemCod[3]-'0');
-
- 		int byte;
- 		for (byte=0; byte<midaNick; byte++)
- 		{
- 			nickRem[byte] = nickRemCod[4+byte];
- 		}
-
- 		nickRem[byte] = '\0';
- 		/*Nick remot descodificat*/
-
- 		printf("%s i %s us heu connectat correctament!\n", nickLoc, nickRem);
- 		printf("Ja podeu començar a xatejar!\n");
+		//Localitzem un altre usuari
+		while(hiHaConnexio!=1){
+			printf("Escriu l'adreça MI de la persona amb la que et vulguis connectar:\n");
+			ha_arribat = LUMIc_HaArribatAlgunaCosa(llistaSck, 3, -1); //temps=-1, espera sense restricció de temps
+			if (ha_arribat == -1) exit(-1);
+			else if (ha_arribat == 0){ //de teclat
+				scanf("%s", MIRemot);
+				respostaLocalitzacio = LUMIc_Localitzar(SckUDP, MIRemot, IPDom, MILocal, IPRemot, &portRemot, fitxerLog);
+				
+				if (respostaLocalitzacio == 0){
+					if ((scon = MI_DemanaConv(IPRemot, portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod)) == -1){
+						printf("Error de connexio\n");
+					}
+					printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
+					printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
+					hiHaConnexio = 1;
+				}
+				else if (respostaLocalitzacio == 1) printf("El domini es erroni\n");
+				else if (respostaLocalitzacio == 2) printf("L'usuari esta offline\n");
+				else if (respostaLocalitzacio == 3) printf("L'usuari no existeix\n");
+				else if (respostaLocalitzacio == 4) printf("L'usuari està ocupat\n");
+				else if (respostaLocalitzacio == -1) printf("No s'ha rebut cap resposta des del servidor\n");
+			}
+	
+			else if (ha_arribat == sesc){ //arriba una petició de connexió per TCP
+				if((scon = MI_AcceptaConv(sesc, IPRemot, &portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod)) == -1){
+					printf("Error de connexio\n");
+				}
+				
+				printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
+				printf("Socket remot amb @IP: %s, i port TCP: %d\n",IPRemot,portRemot);
+				hiHaConnexio = 1;
+			}
+			else{
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 0, fitxerLog); //si arriba petició de connexió per UDP, li diu que està lliure amb codi 0
+			}
+		}
+		
+		//Hi ha hagut connexio entre 2 usuaris
+		
+		if(nickRemCod[0] != 'N') //Si el missatge no segueix el protocol establert
+		{ 
+			perror("El nick no segueix el protocol!");
+			close(scon);
+			exit(-1);
+		}
+		
+		//Si segueix el protocol estipulat, descodifiquem el nickRemCod
+		int midaNick = 100*(nickRemCod[1]-'0') + 10*(nickRemCod[2]-'0') + (nickRemCod[3]-'0');
+		
+		int byte;
+		for (byte=0; byte<midaNick; byte++)
+		{
+			nickRem[byte] = nickRemCod[4+byte];
+		}
+		
+		nickRem[byte] = '\0';
+		/*Nick remot descodificat*/
+		
+		llistaSck[1] = scon; //deixem d'escoltar per sesc, i escoltem per scon
+		
+		printf("%s i %s us heu connectat correctament!\n", nickLoc, nickRem);
+		printf("Ja podeu començar a xatejar!\n");
+			
 
  		do{
- 			if((ha_arribat = MI_HaArribatLinia(scon))==-1) exit(-1); //ERROR!
+ 			if((ha_arribat = LUMIc_HaArribatAlgunaCosa(llistaSck, 3, -1))==-1) exit(-1); //ERROR! -- temps=-1, escolta indefinidament
  			if (ha_arribat == 0) //Envia missatge
  			{
  			  midaMiss = read(0, miss, sizeof(miss));
@@ -150,20 +190,26 @@ int main(int argc,char *argv[])
 
  			  if (miss[0] == '#') //Senyal acabament conversa
  			  {
+				  usuariDesconectat=1;
  				  printf("T'has desconnectat\n");
  			  }
+			  else{
 
- 			  sprintf(missCod, "%c%03d%s", 'L', strlen(miss), miss); //Codifiquem el missatge seguint el protocol establert
+				sprintf(missCod, "%c%03d%s", 'L', strlen(miss), miss); //Codifiquem el missatge seguint el protocol establert
 
- 			  midaMiss = MI_EnviaLinia(scon, missCod); //Enviem el missatge
-
+				midaMiss = MI_EnviaLinia(scon, missCod); //Enviem el missatge
+			  }
  			}
- 			else //Rep missatge
+ 			else if (ha_arribat == scon)//Rep missatge
  			{
  				midaMiss = MI_RepLinia(scon, missCod); //Rebem el missatge
 
 
  				if (midaMiss == -1) {exit(-1);} //Error
+				else if (midaMiss == -2){
+					usuariDesconectat = 1;
+					printf("L'usuari %s s'ha desconnectat.\n", nickRem);
+				}
  				else if (missCod[0] != 'L') //Comprovem que el missatge segueixi el protocol
  				{
  					perror("El missatge no segueix el protocol!");
@@ -185,15 +231,15 @@ int main(int argc,char *argv[])
 
  					//Missatge descodificat
 
- 					if (miss[0] == '#') printf("%s s'ha desconectat\n", nickRem); //Comprovem si el missatge és el senyal d'acabament de la conversa
- 					else
- 					{
- 						printf("%s: %s\n",nickRem,miss); //Mostrem el missatge
- 					}
+					printf("%s: %s\n",nickRem,miss); //Mostrem el missatge
  				}
  			}
+			else //si rep petició de connexio per UDP, li diu que està ocupat, amb el codi 4 (seguint el protocol)
+			{
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 4, fitxerLog);
+			}
 
- 		} while (miss[0]!='#');	//Mentre el missatge no sigui la marca de fi
+ 		} while (usuariDesconectat==0);	//Mentre un dels dos no acabi la conversa
 
  		MI_AcabaConv(scon); //Tanquem conexió i pleguem
 
@@ -201,13 +247,17 @@ int main(int argc,char *argv[])
  		printf("Vols iniciar una nova conversa? (S,N)\n");
  		scanf(" %c", &novaConversa); //posem espai en blanc al principi per alliberar el buffer
  	}
+	
+	while(respostaDesregistre!=0 && intentsDesregistre<3){
+		respostaDesregistre = LUMIc_DesregistrarUsuari(SckUDP, MILocal, IPDom, fitxerLog);
+		intentsDesregistre++;
+	}
+	
+	if (respostaDesregistre==1) printf("No s'ha pogut desregistrar l'usuari\n");
+	LUMIc_TancarSocketUDP(SckUDP);
+	LUMIc_tancaLog(fitxerLog);
 
  	printf("Gracies per utilitzar el nostre servei, fins la proxima!\n");
 
  	return(0);
   }
- }
-
-/* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */
-/* servir només en aquest mateix fitxer. Les seves declaracions es troben */
-/* a l'inici d'aquest fitxer.                                             */
