@@ -250,18 +250,13 @@ int TractarPeticioLoc(char *miss, char *dominiPeticio, int nClients, char *IPEnt
 			numBytes = UDP_EnviaA(Sck, IPEntrada, portEntrada, missRespLoc, strlen(missRespLoc));
 			escriureLiniaLog(log,'E', IPEntrada, portEntrada, missRespLoc, numBytes);
 		}
+		else //tot OK
 		{
-			char respostaLoc[300];
-			if (posicioUsuari == -1)
-			{
-				formatRespostaLocalitzarS(respostaLoc, 2, respostaLoc);
-			} else
-			{
-				formatRespostaLocalitzarS(respostaLoc, 3, respostaLoc);
-			}
-			bytes = UDP_EnviaA(Sck, IPentrada, portEntrada, respostaLoc, strlen(respostaLoc));
-			escriureLiniaLog(log, 'E', IPentrada, portEntrada, respostaLoc, bytes);
+			formatRespostaLocalitzarS(respLoc, 3, respLoc);
+			nBytes = UDP_EnviaA(Sck, IP, port, respLoc, strlen(respLoc));
+			escriureLiniaLog(log, 'E', IP, port, respLoc, nBytes);	
 		}
+			
 	}
 	else //si no es el domini que correspon, busca el domini corresponent...
 	{

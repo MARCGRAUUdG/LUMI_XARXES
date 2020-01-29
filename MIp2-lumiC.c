@@ -127,7 +127,7 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 }
 
 /* Crea el format PLUMI i l'envia al servidor. Espera resposta 3 cops amb un timeout de 50ms).
- * Retorna -1 si hi ha error (no rep res), 1 si tot va bé. */
+ * Retorna -1 si hi ha error (no rep res), o el codi segons el protocol. */
 int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog)
 {
 	char res[300], IPrem[16], missatgeCodificat[300];
