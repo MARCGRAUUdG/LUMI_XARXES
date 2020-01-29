@@ -13,6 +13,20 @@
 /*  (si les funcions EXTERNES es cridessin entre elles, faria falta fer   */
 /*   un #include "lumi.h")                                                */
 
+#include <stdlib.h> 
+#include <stdio.h> 
+#include <string.h> 
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <netinet/in.h> 
+#include <arpa/inet.h> 
+#include <unistd.h>
+#include <netdb.h>
+#include <time.h>
+#include "MIp2-dnsC.h"
+
 /* Definició de constants, p.e., #define XYZ       1500                   */
 
 /* Declaració de funcions INTERNES que es fan servir en aquest fitxer     */
@@ -34,16 +48,24 @@
 int DNSc_ResolDNSaIP(const char *NomDNS, char *IP)
 {
 	struct hostent *dadesHOST;
-	struct in_addr adrHOST;
+	struct in_addr **adrHOST;
+	int i;
 
-	dadesHOST = gethostbyname(NomDNS);
-	if (dadesHOST == NULL) return -1;
+	if ((dadesHOST = gethostbyname(NomDNS)) == NULL) 
+	{
+		herror("gethostbyname");
+		return -1;
+	}
+
+	adrHOST = (struct in_addr **) dadesHOST->h_addr_list;
 	
-	adrHOST.s_addr = *((unsigned long *)dadesHOST->h_addr_list[0]);
-	strcpy(ip,(char*)inet_ntoa(adrHOST));
-	strcpy(FQDN,(*dadesHOST).h_name);
-
-	return 0;
+	for(i = 0; adrHOST[i] != NULL; i++) 
+	{
+		strcpy(IP , inet_ntoa(*adrHOST[i]));
+		return 0;
+	}
+	
+	return -1;
 }
 
 /* Definició de funcions INTERNES, és a dir, d'aquelles que es faran      */

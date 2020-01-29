@@ -11,8 +11,8 @@
 
 /* Inclusió de llibreries, p.e. #include <stdio.h> o #include "meu.h"     */
 
-#include "mi.h"
-#include "lumiC.h"
+#include "MIp2-mi.h"
+#include "MIp2-lumiC.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -123,10 +123,10 @@ int main(int argc,char *argv[])
 			if (ha_arribat == -1) exit(-1);
 			else if (ha_arribat == 0){ //de teclat
 				scanf("%s", MIRemot);
-				respostaLocalitzacio = LUMIc_Localitzar(SckUDP, MIRemot, IPDom, MILocal, IPRemot, portRemot, fitxerLog);
+				respostaLocalitzacio = LUMIc_Localitzar(SckUDP, MIRemot, IPDom, MILocal, IPRemot, &portRemot, fitxerLog);
 				
 				if (respostaLocalitzacio == 0){
-					scon = MI_DemanaConv(IPRemot, portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod)) == -1){
+					if ((scon = MI_DemanaConv(IPRemot, portRemot, IPLocal, &portLocal, nickLocCod, nickRemCod)) == -1){
 						printf("Error de connexio\n");
 					}
 					printf("Socket local amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal);
@@ -150,7 +150,7 @@ int main(int argc,char *argv[])
 				hiHaConnexio = 1;
 			}
 			else{
-				LUMIc_codificarRespostaLocalitzacio(SckUDP, IPLocal, portLocal, 0, fitxerLog); //si arriba petició de connexió per UDP, li diu que està lliure amb codi 0
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 0, fitxerLog); //si arriba petició de connexió per UDP, li diu que està lliure amb codi 0
 			}
 		}
 		
@@ -236,10 +236,10 @@ int main(int argc,char *argv[])
  			}
 			else //si rep petició de connexio per UDP, li diu que està ocupat, amb el codi 4 (seguint el protocol)
 			{
-				LUMIc_codificarRespostaLocalitzacio(SckUDP, IPLocal, portLocal, 4, fitxerLog);
+				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 4, fitxerLog);
 			}
 
- 		} while (usuariDesconectat==0)	//Mentre un dels dos no acabi la conversa
+ 		} while (usuariDesconectat==0);	//Mentre un dels dos no acabi la conversa
 
  		MI_AcabaConv(scon); //Tanquem conexió i pleguem
 
@@ -255,10 +255,9 @@ int main(int argc,char *argv[])
 	
 	if (respostaDesregistre==1) printf("No s'ha pogut desregistrar l'usuari\n");
 	LUMIc_TancarSocketUDP(SckUDP);
-	tancaLog(fitxLog);
+	LUMIc_tancaLog(fitxerLog);
 
  	printf("Gracies per utilitzar el nostre servei, fins la proxima!\n");
 
  	return(0);
   }
- }

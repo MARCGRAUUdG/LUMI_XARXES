@@ -44,7 +44,7 @@
 /* (és a dir, crea un socket “servidor” o en estat d’escolta – listen –). */
 /* Retorna -1 si hi ha error; l’identificador del socket d’escolta de MI  */
 /* creat si tot va bé.                                                    */
-int MI_IniciaEscPetiRemConv(int portTCPloc)
+int MI_IniciaEscPetiRemConv(char *IPLocal, int portTCPloc)
 {
 	int socket;
 	if((socket = TCP_CreaSockServidor(IPLocal, portTCPloc)) == -1)

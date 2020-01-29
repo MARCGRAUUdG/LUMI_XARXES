@@ -7,6 +7,11 @@
 /*                                                                        */
 /**************************************************************************/
 
+#include <stdlib.h> 
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+
 /* Declaració de funcions EXTERNES de lumiC.c, és a dir, d'aquelles       */
 /* funcions que es faran servir en un altre fitxer extern a lumiC.c,      */
 /* p.e., int LUMIc_FuncioExterna(arg1, arg2...) { }                       */
@@ -17,9 +22,9 @@
 
 int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPdom, int log);
 int LUMIc_obrirOCrearFitxLogClient(char *adrMI);
-int LUMIc_escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes);
+int LUMIc_tancaLog(int log);
 int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog);
-int LUMIc_Localitzar(const int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog);
+int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog);
 int LUMIc_CrearSocketUDP(int port, char *IP);
 int LUMIc_TancarSocketUDP(int Sck);
 int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int fitxLog);
