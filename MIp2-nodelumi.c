@@ -45,14 +45,15 @@ int main(int argc,char *argv[])
    struct usuaris taulaUsuaris[nombreUsuaris];
    log = LUMIs_obrirOCrearFitxLogServidor(domini);
 
-   llistaSockets[0] = 0;
-   llistaSockets[1] = LUMIs_Inicialitzar(domini, nombreUsuaris, cfg, taulaUsuaris); //mirar com es crida
+   llistaSockets[0] = LUMIs_Inicialitzar(domini, nombreUsuaris, cfg, taulaUsuaris); //mirar com es crida
+   llistaSockets[1] = 0;
 
    printf("# per acabar\n");
 
    while (final==0)
    {
      canal = LUMIs_HaArribatAlgunaCosa(llistaSockets, 2, -1); //mirar com es crida
+     
      if (canal == 0)
      {
        nBytes = read(0,entrada_t,sizeof(entrada_t));

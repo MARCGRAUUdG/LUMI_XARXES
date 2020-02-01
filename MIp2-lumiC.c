@@ -79,10 +79,12 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	int numBytes;
 	
 	numBytes = codificarMissatgeRegistre(usuari, 'R', missatgeCodificat);
+	
 
 	DNSc_ResolDNSaIP(domini, IPDom);
 
 	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, numBytes);
+	printf("NUMERO DE BYTES DEL MISSATGE ENVIAT %s\n", missatgeCodificat);
 	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 
 	tSck[0] = Sck;

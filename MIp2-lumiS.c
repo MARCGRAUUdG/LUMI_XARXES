@@ -100,11 +100,16 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 	bytes = UDP_RepDe(Sck, IP, &port, missatge, sizeof(missatge));
 
 	escriureLiniaFitxLog(fitxLog, 'R', IP, port, missatge, bytes);
+	
+	printf("MISSATGE REGISTRE: %s\n",missatge);
 
 	if (missatge[0] == 'R')
 	{
+		printf("HOLAAA\n");
 		int codiReg = RegistrarUsuari(taulaUsuaris, nUsuaris, missatge, IP, port);
+		printf("codiREgistre%d\n",codiReg);
 		codificarRespostaRegiste(codiReg, 'C', resRegDes);
+		printf("RESPOSTA REGISTRE: %s\n",resRegDes);
 		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
 		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}

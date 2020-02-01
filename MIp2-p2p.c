@@ -59,8 +59,6 @@ int main(int argc,char *argv[])
 {
     int midaMiss;
  	int sesc=0, scon=0;
- 	int ipServidor;
- 	int portServidor;
  	int portRemot;
  	int portLocal;
 	int SckUDP;
@@ -105,12 +103,12 @@ int main(int argc,char *argv[])
 
  		sprintf(nickLocCod, "%c%03d%s", 'N', strlen(nickLoc), nickLoc); //Codifiquem el nick seguint el protocol establert
 
- 		printf("Escriu el port TCP del socket servidor:\n ");
- 		scanf("%d", &portServidor);
+ 		printf("Escriu el port TCP:\n ");
+ 		scanf("%d", &portLocal);
 
- 		sesc = MI_IniciaEscPetiRemConv(IPLocal,portServidor); //Creem socket servidor amb l'ip trobada anteriorment i un port que ens entra l'usuari;
+ 		sesc = MI_IniciaEscPetiRemConv(IPLocal,portLocal); //Creem socket servidor amb l'ip trobada anteriorment i un port que ens entra l'usuari;
 
- 		printf("Socket servidor creat amb @IP: %s, i port TCP: %d\n",IPLocal,portServidor); //Mostrem informació del socket servidor
+ 		printf("Socket servidor creat amb @IP: %s, i port TCP: %d\n",IPLocal,portLocal); //Mostrem informació del socket servidor
 
 		llistaSck[0] = SckUDP; //socket UDP
 		llistaSck[1] = sesc;   //socket TCP

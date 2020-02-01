@@ -327,6 +327,12 @@ int UDP_RepDe(int Sck, char *IPrem, int *portUDPrem, char *SeqBytes, int LongSeq
 		close(Sck);
 		exit(-1);
 	}
+	
+	strcpy(IPrem, inet_ntoa(adrrem.sin_addr));
+	*portUDPrem = ntohs(adrrem.sin_port);
+	
+	SeqBytes[bllegit] = '\0';
+	
 	return bllegit;
 }
 
@@ -479,7 +485,7 @@ int T_HaArribatAlgunaCosa(const int *LlistaSck, int LongLlistaSck)
 /* (aquesta funció podria substituir a l'anterior T_HaArribatAlgunaCosa() */
 /* ja que quan “Temps” és -1 és equivalent a ella)                        */
 int T_HaArribatAlgunaCosaEnTemps(const int *LlistaSck, int LongLlistaSck, int Temps)
-{ //canviar
+{ 
 	fd_set conjunt;
 	int descmax = 0, i;
 
