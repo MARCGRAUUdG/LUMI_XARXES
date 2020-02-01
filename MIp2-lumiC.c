@@ -76,15 +76,13 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 
 	separaUsuariDomini(adrMI,usuari,domini);  //obtenim l'usuari i el domini de l'adreça MI
 
-	
-	
 	int numBytes;
-
+	
 	numBytes = codificarMissatgeRegistre(usuari, 'R', missatgeCodificat);
 
 	DNSc_ResolDNSaIP(domini, IPDom);
 
-	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, nBytes);
+	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, numBytes);
 	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 
 	tSck[0] = Sck;
