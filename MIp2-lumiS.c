@@ -227,6 +227,7 @@ int buscarUsuariRegistrat(struct usuaris *taulaUsuaris, char *usernamePeticio, i
 {
 	int i=0;
     int trobat = 0;
+    printf(" Hola hilota\n");
 
 	while (i<numClients && !trobat)
 	{
@@ -285,7 +286,7 @@ int TractarPeticioLoc(char *miss, char *nostreDomini, int numUsuaris, char *IPEn
 		int portPeticio, posUsuari;
 
 		posUsuari = buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio); //busquem un usuari
-		
+		printf(" POSICIO DE LUSER	%d\n", posUsuari);
 
 		if (posUsuari==-1) //no s'ha trobat l'usuari
 		{
