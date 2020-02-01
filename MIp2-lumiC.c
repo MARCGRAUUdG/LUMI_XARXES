@@ -146,7 +146,7 @@ int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP
 	char res[300], IPrem[16], missatgeCodificat[300];
 	int compt = 0, portRem, bytes;
 
-	codificarMissatgeLocalitzacio(MIloc, adrMI, res);
+	codificarMissatgeLocalitzacio(adrMI, MIloc, res);
 
 	while(compt < 3){	//s'intenta 3 vegades
 		bytes = UDP_EnviaA(Sck, IPDom, 6000, res, strlen(res));
