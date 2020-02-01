@@ -141,7 +141,9 @@ int RegistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCo
 	{
 		if (strcmp(taulaUsuaris[i].usuari, usuari) == 0)  //si té el mateix nom d'usuari
 		{
+			printf("HE DONAT D'ALTA L'USUARI %s\n", taulaUsuaris[i].usuari);
 			strcpy(taulaUsuaris[i].sckLUMI, IPPort);  //hi posem la ip i el port en el format desitjat, de l'usuari que s'ha connectat
+			printf("LA IP ÉS %s\n", IPPort);
 			return 0; //tot ok, ha trobat el  client
 		}
 		i++;
@@ -234,17 +236,24 @@ int buscarUsuariRegistrat(struct usuaris *taulaUsuaris, char *usernamePeticio, i
 
 	if (trobat==1)
 	{
-		char AdrMIUsuari[25];
-		strcpy(AdrMIUsuari,taulaUsuaris[i].sckLUMI);
-		char IPUsuari[16];
-		strcpy(IPUsuari,strtok(AdrMIUsuari, "-"));
-		int portUsuari;
-		portUsuari = atoi(AdrMIUsuari);
-		printf("%d", portUsuari);
+		if (strcmp(taulaUsuaris[i].sckLUMI,"0")==0){
+			strcpy(IPPeticio, "0");
+			*portPeticio=0;
+			return i;
+		}
+		else{
+			char AdrMIUsuari[25];
+			strcpy(AdrMIUsuari,taulaUsuaris[i].sckLUMI);
+			char IPUsuari[16];
+			strcpy(IPUsuari,strtok(AdrMIUsuari, "-"));
+			int portUsuari;
+			portUsuari = atoi(strtok(NULL, "-"));
+			printf("%d", portUsuari);
 
-		strcpy(IPPeticio, IPUsuari);
-		*portPeticio=portUsuari;
-		return i;
+			strcpy(IPPeticio, IPUsuari);
+			*portPeticio=portUsuari;
+			return i;
+		}
 	}
 	else return -1;
 }
@@ -271,6 +280,7 @@ int TractarPeticioLoc(char *miss, char *nostreDomini, int numUsuaris, char *IPEn
 
 	if((strcmp(dominiPeticio,nostreDomini))==0) //si es demana connectar amb un usuari del nostre domini...
 	{
+		printf("EL NOSTRE DOMINI ES %s\n",nostreDomini);
 
 		int portPeticio, posUsuari;
 
