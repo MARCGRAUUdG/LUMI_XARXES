@@ -357,7 +357,7 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 	if((strcmp(dominiPeticio,nostreDomini))==0){
 		buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio);
 		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
-		nBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(miss));
+		nBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(missatgeOriginal));
 		printf("Num de bytes de envia a del mateix domini %d\n", nBytes);
 		escriureLiniaFitxLog(log, 'E', IPPeticio, portPeticio, missatgeOriginal, nBytes);
 	}

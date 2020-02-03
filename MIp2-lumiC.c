@@ -159,11 +159,11 @@ int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP
 			bytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
 			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, bytes);
 
-			printf("MISSS COD: %s", missatgeCodificat);
+			printf("MISSS COD: %s\n", missatgeCodificat);
 
 			if(missatgeCodificat[1] == '0'){
 				extreureIPport(ipTCP, portTCP, missatgeCodificat);
-				return 1;
+				return 0;
 			}
 			else return missatgeCodificat[1] - '0';
 		}
@@ -208,7 +208,7 @@ int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int 
 	res = strtok(missatge+1, "#");
 	adrecaMI = strtok(NULL, "#");
 	
-	//printf("AdreçaMI: %s\n", adrecaMI);
+	printf("AdreçaMI: %s\n", adrecaMI);
 
 	codificarRespostaLocalitzacioC(codi, missatgeCodificat, adrecaMI, ipTCP, portTCP);
 	
