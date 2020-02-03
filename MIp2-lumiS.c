@@ -345,9 +345,9 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 	strcpy(dominiPeticio, strtok(NULL, "#"));
 	dominiPeticio[sizeof(dominiPeticio)] = '\0';
 	
-	//printf("Username %s\n", usernamePeticio);
+	printf("Username %s\n", usernamePeticio);
 	
-	//printf("Domini %s\n", dominiPeticio);
+	printf("Domini %s\n", dominiPeticio);
 	
 		
 	char IPPeticio[16];
