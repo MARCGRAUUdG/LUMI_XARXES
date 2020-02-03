@@ -204,12 +204,15 @@ int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int 
 	numBytes = UDP_RepDe(Sck, IPServidor, &portServidor, missatge, 300);
 	escriureLiniaLog(fitxLog, 'R', IPServidor, portServidor, missatge, numBytes);
 	
-	char *adrecaMI;
-	adrecaMI = strtok(missatge+1, "#");
+	char *adrecaMI, *res;
+	res = strtok(missatge+1, "#");
+	adrecaMI = strtok(NULL, "#");
+	
+	//printf("AdreçaMI: %s\n", adrecaMI);
 
 	codificarRespostaLocalitzacioC(codi, missatgeCodificat, adrecaMI, ipTCP, portTCP);
 	
-	printf("Resposta de localització despres de crear: %s", missatgeCodificat);
+	//printf("Resposta de localització despres de crear: %s", missatgeCodificat);
 	
 	numBytes = UDP_EnviaA(Sck, IPServidor, portServidor, missatgeCodificat, strlen(missatgeCodificat));
 	escriureLiniaLog(fitxLog, 'E', IPServidor, portServidor, missatgeCodificat, numBytes);

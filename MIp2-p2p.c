@@ -148,6 +148,7 @@ int main(int argc,char *argv[])
 				hiHaConnexio = 1;
 			}
 			else{
+				
 				LUMIc_RespostaLocalitzacio(SckUDP, IPLocal, portLocal, 0, fitxerLog); //si arriba petició de connexió per UDP, li diu que està lliure amb codi 0
 			}
 		}

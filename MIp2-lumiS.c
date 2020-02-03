@@ -358,12 +358,14 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 		buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio);
 		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
 		nBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(miss));
+		printf("Num de bytes de envia a del mateix domini %d\n", nBytes);
 		escriureLiniaFitxLog(log, 'E', IPPeticio, portPeticio, missatgeOriginal, nBytes);
 	}
 	else{
 		DNSc_ResolDNSaIP(dominiPeticio, IPPeticio);
 		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
 		nBytes = UDP_EnviaA(Sck, IPPeticio, 6000, missatgeOriginal, strlen(missatgeOriginal));
+		printf("Num de bytes de envia a %d\n", nBytes);
 		escriureLiniaFitxLog(log, 'E', IPPeticio, 6000, missatgeOriginal, nBytes);
 	}
 
