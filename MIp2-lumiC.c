@@ -69,7 +69,7 @@ int escriureLiniaLog(int nomfitx, char codi, char *IP, int port, char *missatge,
 /* Té un timeout de 10ms i s'intenta fins 3 vegades 					  */
 int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 {
-	char usuari[299], domini[20], missatgeCodificat[300];
+	char usuari[299], domini[20], missatgeCodificat[2];
 	int nBytes, tSck[1], portAux;
 	char IPaux[16];
 	int i=0;
@@ -83,7 +83,7 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 
 	DNSc_ResolDNSaIP(domini, IPDom);
 
-	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, numBytes);
+	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, strlen(missatgeCodificat));
 	printf("NUMERO DE BYTES DEL MISSATGE ENVIAT %s\n", missatgeCodificat);
 	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 

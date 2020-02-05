@@ -107,14 +107,14 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 	{
 		int codiReg = RegistrarUsuari(taulaUsuaris, nUsuaris, missatge, IP, port);
 		codificarRespostaRegiste(codiReg, 'C', resRegDes);
-		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, 300);
+		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
 		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}
 	else if (missatge[0] == 'D')
 	{
 		int codDes = DesregistrarUsuari(taulaUsuaris, nUsuaris, missatge);
 		codificarRespostaRegiste(codDes, 'C', resRegDes);
-		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, 300);
+		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
 		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, bytes);
 	}
 	else if (missatge[0] == 'L')
