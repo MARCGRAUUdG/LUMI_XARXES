@@ -101,7 +101,7 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 
 	escriureLiniaFitxLog(fitxLog, 'R', IP, port, missatge, bytes);
 	
-	printf("MISSATGE REGISTRE: %s\n",missatge);
+	//printf("MISSATGE REGISTRE: %s\n",missatge);
 
 	if (missatge[0] == 'R')
 	{
@@ -123,7 +123,7 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 	}
 	else if (missatge[0] == 'S')
 	{
-		printf("Missatge original abans mètode %s\n", missatge);
+		//printf("Missatge original abans mètode %s\n", missatge);
 		TractarPeticioRespLoc(missatge, domini, nUsuaris, IP, port, Sck, fitxLog, taulaUsuaris);
 	}
 
@@ -352,21 +352,21 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 		
 	char IPPeticio[16];
 	char missRespLoc[300];
-	int nBytes, portPeticio;
+	int numBytes, portPeticio;
 	
 	if((strcmp(dominiPeticio,nostreDomini))==0){
 		buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio);
 		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
-		nBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(missatgeOriginal));
-		printf("Num de bytes de envia a del mateix domini %d\n", nBytes);
-		escriureLiniaFitxLog(log, 'E', IPPeticio, portPeticio, missatgeOriginal, nBytes);
+		numBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(missatgeOriginal));
+		printf("Num de bytes de envia a del mateix domini %d\n", numBytes);
+		escriureLiniaFitxLog(log, 'E', IPPeticio, portPeticio, missatgeOriginal, numBytes);
 	}
 	else{
 		DNSc_ResolDNSaIP(dominiPeticio, IPPeticio);
 		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
-		nBytes = UDP_EnviaA(Sck, IPPeticio, 6000, missatgeOriginal, strlen(missatgeOriginal));
-		printf("Num de bytes de envia a %d\n", nBytes);
-		escriureLiniaFitxLog(log, 'E', IPPeticio, 6000, missatgeOriginal, nBytes);
+		numBytes = UDP_EnviaA(Sck, IPPeticio, 6000, missatgeOriginal, strlen(missatgeOriginal));
+		printf("Num de bytes de envia a %d\n", numBytes);
+		escriureLiniaFitxLog(log, 'E', IPPeticio, 6000, missatgeOriginal, numBytes);
 	}
 
 	return 0;

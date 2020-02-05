@@ -3,7 +3,7 @@
 /* P2 - MI amb sockets TCP/IP - Part II                                   */
 /* Fitxer capçalera de mi.c                                               */
 /*                                                                        */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 

@@ -4,7 +4,7 @@
 /* Fitxer mi.c que implementa la capa d'aplicació de MI, sobre la capa de */
 /* transport TCP (fent crides a la "nova" interfície de la capa TCP o     */
 /* "nova" interfície de sockets)                                          */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 

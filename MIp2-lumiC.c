@@ -4,7 +4,7 @@
 /* Fitxer lumiC.c que implementa la capa d'aplicació de MI, sobre la capa */
 /* de transport UDP (fent crides a la "nova" interfície de la capa UDP o  */
 /* "nova" interfície de sockets), però només la part client               */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 
@@ -70,7 +70,7 @@ int escriureLiniaLog(int nomfitx, char codi, char *IP, int port, char *missatge,
 int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 {
 	char usuari[299], domini[20], missatgeCodificat[2];
-	int nBytes, tSck[1], portAux;
+	int nBytes, tSck[1], portAux, canal;
 	char IPaux[16];
 	int i=0;
 
@@ -84,13 +84,13 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	DNSc_ResolDNSaIP(domini, IPDom);
 
 	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, strlen(missatgeCodificat));
-	printf("NUMERO DE BYTES DEL MISSATGE ENVIAT %s\n", missatgeCodificat);
+	//printf("NUMERO DE BYTES DEL MISSATGE ENVIAT %s\n", missatgeCodificat);
 	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 
 	tSck[0] = Sck;
 	
 	while(i < 3){		//s'intenta fins a 3 vegades
-		int canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
 		if(canal < 0) i++;
 		else{
 			nBytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(missatgeCodificat));
@@ -107,30 +107,35 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
  * Té un timeout de 10ms i s'intenta fins a 3 vegades */
 int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 {
-	int i = 0, bytes, portAux, tSck[1];
-	char nom[100], aux, missatgeCodificat[300], IPaux[16];
+	int i = 0, numBytes, portAux, tSck[1], canal;
+	char usuari[299], aux, missatgeCodificat[300], IPaux[16];
 
-	do{
+	//S'HA DE PROVAR SI FUNCIONA
+	usuari = strtok(adrMI, "@");
+	
+	usuari[strlen(usuari)-1] = '\0';
+
+	/*do{
 		aux = adrMI[i];
 		nom[i] = aux;
 		i++;
 	}while(aux != '@');
 
-	nom[i-1] = '\0';
+	usuari[i-1] = '\0';*/
 
-	bytes = codificarMissatgeRegistre(nom, 'D', missatgeCodificat);
+	numBytes = codificarMissatgeRegistre(usuari, 'D', missatgeCodificat);
 
-	bytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, bytes);
-	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, bytes);  //E d'enviat
+	numBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, numBytes);
+	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, numBytes);  //E d'enviat
 
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
-		int canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
 		if(canal < 0) i++;
 		else{
-			bytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(missatgeCodificat));
-			escriureLiniaLog(fitxLog, 'R', IPaux, portAux, missatgeCodificat, bytes);
+			numBytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(missatgeCodificat));
+			escriureLiniaLog(fitxLog, 'R', IPaux, portAux, missatgeCodificat, numBytes);
 
 			if(missatgeCodificat[0] != 'C') return -1;
 			else return missatgeCodificat[1] - '0';
@@ -144,22 +149,22 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog)
 {
 	char res[300], IPrem[16], missatgeCodificat[300];
-	int compt = 0, portRem, bytes;
+	int compt = 0, portRem, numBytes;
 
 	codificarMissatgeLocalitzacio(adrMI, MIloc, res);
 
 	while(compt < 3){	//s'intenta 3 vegades
-		bytes = UDP_EnviaA(Sck, IPDom, 6000, res, strlen(res));
-		escriureLiniaLog(fitxLog, 'E', IPDom, 6000, res, bytes);  //E d'enviat
+		numBytes = UDP_EnviaA(Sck, IPDom, 6000, res, strlen(res));
+		escriureLiniaLog(fitxLog, 'E', IPDom, 6000, res, numBytes);  //E d'enviat
 
 		int llistaSck[1];
 		llistaSck[0] = Sck;
 
 		if(T_HaArribatAlgunaCosaEnTemps(llistaSck, 1, 50) == Sck){
-			bytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
-			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, bytes);
+			numBytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
+			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, numBytes);
 
-			printf("MISSS COD: %s\n", missatgeCodificat);
+			//printf("MISSS COD: %s\n", missatgeCodificat);
 
 			if(missatgeCodificat[1] == '0'){
 				extreureIPport(ipTCP, portTCP, missatgeCodificat);
@@ -208,7 +213,7 @@ int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int 
 	res = strtok(missatge+1, "#");
 	adrecaMI = strtok(NULL, "#");
 	
-	printf("AdreçaMI: %s\n", adrecaMI);
+	//printf("AdreçaMI: %s\n", adrecaMI);
 
 	codificarRespostaLocalitzacioC(codi, missatgeCodificat, adrecaMI, ipTCP, portTCP);
 	

@@ -4,7 +4,7 @@
 /* Fitxer t.c que "implementa" la capa de transport, o més ben dit, que   */
 /* encapsula les funcions de la interfície de sockets, en unes altres     */
 /* funcions més simples i entenedores: la "nova" interfície de sockets.   */
-/* Autors: X, Y                                                           */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 

@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
 	int llistaSck[3];
 	int ha_arribat;
 	int hiHaConnexio=0;
-	int usuariDesconectat = 0;
+	int usuariDesconectat=0;
 	int respostaDesregistre=0;
 	int intentsDesregistre=0;
 	
@@ -86,7 +86,7 @@ int main(int argc,char *argv[])
 	
 	if((SckUDP = LUMIc_CrearSocketUDP(0, IPLocal)) == -1) exit(-1);  //creem socket UDP
 	do{
-		printf("Entra la teva adreça MI:\n ");
+		printf("Entra la teva adreça MI per a connectar-te:\n ");
 		bytesMI = read(0,MILocal,sizeof(MILocal));
 		MILocal[bytesMI-1] = '\0';
 		fitxerLog = LUMIc_obrirOCrearFitxLogClient(MILocal);

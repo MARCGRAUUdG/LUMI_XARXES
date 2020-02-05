@@ -3,7 +3,7 @@
 /* P2 - MI amb sockets TCP/IP - Part II                                   */
 /* Fitxer capçalera de lumiC.c                                            */
 /*                                                                        */
-/* Autors: Marc Grau i Xavier Roca                                                          */
+/* Autors: Marc Grau i Xavier Roca                                        */
 /*                                                                        */
 /**************************************************************************/
 
