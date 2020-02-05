@@ -111,9 +111,9 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	char usuari[299], aux, missatgeCodificat[300], IPaux[16];
 
 	//S'HA DE PROVAR SI FUNCIONA
-	usuari = strtok(adrMI, "@");
+	strcpy(usuari, strtok(adrMI, "@"));
 	
-	usuari[strlen(usuari)-1] = '\0';
+	usuari[strlen(usuari)] = '\0';
 
 	/*do{
 		aux = adrMI[i];

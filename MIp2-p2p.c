@@ -79,7 +79,7 @@ int main(int argc,char *argv[])
 	int ha_arribat;
 	int hiHaConnexio=0;
 	int usuariDesconectat=0;
-	int respostaDesregistre=0;
+	int respostaDesregistre=-2;
 	int intentsDesregistre=0;
 	
 	obtenirIPGlobal(IPLocal); //Obtenim una IP que no sigui la de retorn
@@ -245,14 +245,19 @@ int main(int argc,char *argv[])
  		//Preguntem si volen fer una nova conversa
  		printf("Vols iniciar una nova conversa? (S,N)\n");
  		scanf(" %c", &novaConversa); //posem espai en blanc al principi per alliberar el buffer
+ 		if (novaConversa == 'S') {
+			hiHaConnexio = 0;
+			usuariDesconectat = 0;
+		}
  	}
 	
-	while(respostaDesregistre!=0 && intentsDesregistre<3){
+	while(respostaDesregistre!=0 && respostaDesregistre!=-1 && intentsDesregistre<3){
 		respostaDesregistre = LUMIc_DesregistrarUsuari(SckUDP, MILocal, IPDom, fitxerLog);
 		intentsDesregistre++;
 	}
 	
-	if (respostaDesregistre==1) printf("No s'ha pogut desregistrar l'usuari\n");
+	if (respostaDesregistre==1) printf("No s'ha pogut desregistrar l'usuari, aquest no existeix\n");
+	if (respostaDesregistre==-1) printf("EP! hi ha hagut un problema amb el servidor");
 	LUMIc_TancarSocketUDP(SckUDP);
 	LUMIc_tancaLog(fitxerLog);
 
