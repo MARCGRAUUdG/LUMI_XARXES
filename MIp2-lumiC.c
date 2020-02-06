@@ -90,7 +90,7 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	tSck[0] = Sck;
 	
 	while(i < 3){		//s'intenta fins a 3 vegades
-		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 200);
 		if(canal < 0) i++;
 		else{
 			nBytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(missatgeCodificat));
@@ -131,7 +131,7 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	tSck[0] = Sck;
 	i = 0;
 	while(i < 3){		//s'intenta fins a 3 vegades
-		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 10);
+		canal = T_HaArribatAlgunaCosaEnTemps(tSck, 1, 200);
 		if(canal < 0) i++;
 		else{
 			numBytes = UDP_RepDe(Sck, IPaux, &portAux, missatgeCodificat, sizeof(missatgeCodificat));
@@ -144,6 +144,7 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	return -1;
 }
 
+/* Crea el format PLUMI i l'envia al servidor. Espera resposta 3 cops amb un timeout de 50ms).
 /* Crea el format PLUMI i l'envia al servidor. Espera resposta 3 cops amb un timeout de 50ms).
  * Retorna -1 si hi ha error (no rep res), o el codi segons el protocol. */
 int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog)
@@ -160,7 +161,7 @@ int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP
 		int llistaSck[1];
 		llistaSck[0] = Sck;
 
-		if(T_HaArribatAlgunaCosaEnTemps(llistaSck, 1, 50) == Sck){
+		if(T_HaArribatAlgunaCosaEnTemps(llistaSck, 1, 200) == Sck){
 			numBytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
 			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, numBytes);
 
