@@ -56,15 +56,6 @@ int LUMIc_tancaLog(int log)
 }
 
 
-/* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
-/* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
-int escriureLiniaLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes)
-{
-	char liniaLog[300];
-	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, missatge, bytes);
-	return Log_EscriuC(nomfitx, liniaLog);
-}
-
 /* Crea el missatge per registrar segons protocol i s'envia al servidor per efectuar el registre */
 /* Té un timeout de 10ms i s'intenta fins 3 vegades 					  */
 int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
@@ -84,7 +75,7 @@ int LUMIc_RegistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog)
 	DNSc_ResolDNSaIP(domini, IPDom);
 
 	nBytes = UDP_EnviaA(Sck, IPDom, 6000, missatgeCodificat, strlen(missatgeCodificat));
-	//printf("NUMERO DE BYTES DEL MISSATGE ENVIAT %s\n", missatgeCodificat);
+
 	escriureLiniaLog(fitxLog, 'E', IPDom, 6000, missatgeCodificat, nBytes);  //E d'enviat
 
 	tSck[0] = Sck;
@@ -165,8 +156,6 @@ int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP
 			numBytes = UDP_RepDe(Sck, IPrem, &portRem, missatgeCodificat, 300);
 			escriureLiniaLog(fitxLog, 'R', IPrem, portRem, missatgeCodificat, numBytes);
 
-			//printf("MISSS COD: %s\n", missatgeCodificat);
-
 			if(missatgeCodificat[1] == '0'){
 				extreureIPport(ipTCP, portTCP, missatgeCodificat);
 				return 0;
@@ -214,11 +203,8 @@ int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int 
 	res = strtok(missatge+1, "#");
 	adrecaMI = strtok(NULL, "#");
 	
-	//printf("AdreçaMI: %s\n", adrecaMI);
-
 	codificarRespostaLocalitzacioC(codi, missatgeCodificat, adrecaMI, ipTCP, portTCP);
 	
-	//printf("Resposta de localització despres de crear: %s", missatgeCodificat);
 	
 	numBytes = UDP_EnviaA(Sck, IPServidor, portServidor, missatgeCodificat, strlen(missatgeCodificat));
 	escriureLiniaLog(fitxLog, 'E', IPServidor, portServidor, missatgeCodificat, numBytes);
@@ -303,6 +289,15 @@ int extreureIPport(char *ipTCP, int *portTCP, char *miss)
 		i++;
 	}
 	return 1;
+}
+
+/* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
+/* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
+int escriureLiniaLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes)
+{
+	char liniaLog[300];
+	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, missatge, bytes);
+	return Log_EscriuC(nomfitx, liniaLog);
 }
 
 /* Crea un fitxer de "log" de nom "NomFitxLog".                           */

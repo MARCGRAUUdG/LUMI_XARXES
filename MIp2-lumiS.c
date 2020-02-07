@@ -73,14 +73,6 @@ int LUMIs_HaArribatAlgunaCosa(int *llistaSck, int midaLlista, int temps)
 	return T_HaArribatAlgunaCosaEnTemps(llistaSck, midaLlista, temps);
 }
 
-/* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
-/* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
-int escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes){
-	char liniaLog[300];
-	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, missatge, bytes);
-	return Log_Escriu(nomfitx, liniaLog);
-}
-
 int LUMIs_Inicialitzar(char *nomDomini, int nUsuaris, FILE *cfg, struct usuaris *taulaUsuaris){
 	int socketServidor = UDP_CreaSock("0.0.0.0", 6000);
 
@@ -96,26 +88,24 @@ int LUMIs_Inicialitzar(char *nomDomini, int nUsuaris, FILE *cfg, struct usuaris 
 
 int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, int nUsuaris, int fitxLog){
 	char missatge[300], IP[16], resRegDes[2], resLoc[300];
-	int port, bytes;
-	bytes = UDP_RepDe(Sck, IP, &port, missatge, sizeof(missatge));
+	int port, numBytes;
+	numBytes = UDP_RepDe(Sck, IP, &port, missatge, sizeof(missatge));
 
-	escriureLiniaFitxLog(fitxLog, 'R', IP, port, missatge, bytes);
+	escriureLiniaFitxLog(fitxLog, 'R', IP, port, missatge, numBytes);
 	
-	//printf("MISSATGE REGISTRE: %s\n",missatge);
-
 	if (missatge[0] == 'R')
 	{
 		int codiReg = RegistrarUsuari(taulaUsuaris, nUsuaris, missatge, IP, port);
 		codificarRespostaRegiste(codiReg, 'C', resRegDes);
-		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
-		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, bytes);
+		int numBytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
+		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, numBytes);
 	}
 	else if (missatge[0] == 'D')
 	{
 		int codDes = DesregistrarUsuari(taulaUsuaris, nUsuaris, missatge);
 		codificarRespostaRegiste(codDes, 'C', resRegDes);
-		int bytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
-		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, bytes);
+		int numBytes = UDP_EnviaA(Sck, IP, port, resRegDes, sizeof(resRegDes));
+		escriureLiniaFitxLog(fitxLog, 'E', IP, port, resRegDes, numBytes);
 	}
 	else if (missatge[0] == 'L')
 	{
@@ -123,7 +113,6 @@ int LUMIs_ServeixPeticio(int Sck, char *domini, struct usuaris *taulaUsuaris, in
 	}
 	else if (missatge[0] == 'S')
 	{
-		//printf("Missatge original abans mètode %s\n", missatge);
 		TractarPeticioRespLoc(missatge, domini, nUsuaris, IP, port, Sck, fitxLog, taulaUsuaris);
 	}
 
@@ -146,9 +135,7 @@ int RegistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatgeCo
 	{
 		if (strcmp(taulaUsuaris[i].usuari, usuari) == 0)  //si té el mateix nom d'usuari
 		{
-			//printf("HE DONAT D'ALTA L'USUARI %s\n", taulaUsuaris[i].usuari);
 			strcpy(taulaUsuaris[i].sckLUMI, IPPort);  //hi posem la ip i el port en el format desitjat, de l'usuari que s'ha connectat
-			//printf("LA IP ÉS %s\n", IPPort);
 			return 0; //tot ok, ha trobat el  client
 		}
 		i++;
@@ -175,6 +162,14 @@ int DesregistrarUsuari(struct usuaris *taulaUsuaris, int nUsuaris, char *missatg
 	return 1; //no ha trobat l'usuari
 }
 
+/* Escriu una linia de text al fitxer de log amb nom "nomfitx"			  */
+/* Retorna -1 si hi ha error, o el nombre de caràcters de la línia altrament  */
+int escriureLiniaFitxLog(int nomfitx, char codi, char *IP, int port, char *missatge, int bytes){
+	char liniaLog[300];
+	sprintf(liniaLog, "%c:  %s/UDP/%d,  %s, %d", codi, IP, port, missatge, bytes);
+	return Log_Escriu(nomfitx, liniaLog);
+}
+
 /* Crea un fitxer de "log" de nom "NomFitxLog".                           */
 /* "NomFitxLog" és un "string" de C (vector de chars imprimibles acabat   */
 /* en '\0') d'una longitud qualsevol.                                     */
@@ -186,8 +181,6 @@ int Log_CreaFitx(const char *NomFitxLog)
 	fitxerIden = open(NomFitxLog, O_WRONLY/*obrir mode escriptura*/ | O_APPEND /*escriptura des del final*/| O_CREAT/*si no existeix el crea*/);
 	return fitxerIden;//retorna l'identificador del fitxer
 }
-
-
 
 /* Escriu al fitxer de "log" d'identificador "FitxLog" el missatge de     */
 /* "log" "MissLog".                                                       */
@@ -232,7 +225,6 @@ int buscarUsuariRegistrat(struct usuaris *taulaUsuaris, char *usernamePeticio, i
 {
 	int i=0;
     int trobat = 0;
-    //printf(" Hola hilota\n");
 
 	while (i<numClients && !trobat)
 	{
@@ -254,7 +246,6 @@ int buscarUsuariRegistrat(struct usuaris *taulaUsuaris, char *usernamePeticio, i
 			strcpy(IPUsuari,strtok(AdrMIUsuari, "-"));
 			int portUsuari;
 			portUsuari = atoi(strtok(NULL, "-"));
-			//printf("%d", portUsuari);
 
 			strcpy(IPPeticio, IPUsuari);
 			*portPeticio=portUsuari;
@@ -276,22 +267,16 @@ int TractarPeticioLoc(char *miss, char *nostreDomini, int numUsuaris, char *IPEn
 	strcpy(dominiPeticio, strtok(NULL, "#"));
 	dominiPeticio[sizeof(dominiPeticio)] = '\0';
 		
-	//printf("Username %s\n", usernamePeticio);
-	
-	//printf("Domini %s\n", dominiPeticio);
-
 	char IPPeticio[16];
 	char missRespLoc[300];
     int numBytes;
 
 	if((strcmp(dominiPeticio,nostreDomini))==0) //si es demana connectar amb un usuari del nostre domini...
 	{
-		//printf("EL NOSTRE DOMINI ES %s\n",nostreDomini);
 
 		int portPeticio, posUsuari;
 
 		posUsuari = buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio); //busquem un usuari
-		//printf(" POSICIO DE LUSER	%d\n", posUsuari);
 
 		if (posUsuari==-1) //no s'ha trobat l'usuari
 		{
@@ -323,7 +308,6 @@ int TractarPeticioLoc(char *miss, char *nostreDomini, int numUsuaris, char *IPEn
 			}
 			else{
 				numBytes = UDP_EnviaA(Sck, IPPeticio, 6000, missatgeOriginal, strlen(missatgeOriginal));
-				//printf("NOMBRE DE BYTES %d\n", numBytes);
 				escriureLiniaFitxLog(log, 'E', IPPeticio, 6000, missatgeOriginal, numBytes);
 			}
 	 }
@@ -335,19 +319,13 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 {
 	char missatgeOriginal[300];
 	strcpy(missatgeOriginal,miss);
-	
-	printf("Missatge original %s\n", miss);
-	
+		
 	char usernamePeticio[74];
 	strcpy(usernamePeticio, strtok(miss+2, "@#"));
 	usernamePeticio[sizeof(usernamePeticio)] = '\0';
 	char dominiPeticio[74];
 	strcpy(dominiPeticio, strtok(NULL, "#"));
 	dominiPeticio[sizeof(dominiPeticio)] = '\0';
-	
-	printf("Username %s\n", usernamePeticio);
-	
-	printf("Domini %s\n", dominiPeticio);
 	
 		
 	char IPPeticio[16];
@@ -356,16 +334,12 @@ int TractarPeticioRespLoc(char *miss, char *nostreDomini, int numUsuaris, char *
 	
 	if((strcmp(dominiPeticio,nostreDomini))==0){
 		buscarUsuariRegistrat(taulaUsuaris, usernamePeticio, numUsuaris, IPPeticio, &portPeticio);
-		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
 		numBytes = UDP_EnviaA(Sck, IPPeticio, portPeticio, missatgeOriginal, strlen(missatgeOriginal));
-		printf("Num de bytes de envia a del mateix domini %d\n", numBytes);
 		escriureLiniaFitxLog(log, 'E', IPPeticio, portPeticio, missatgeOriginal, numBytes);
 	}
 	else{
 		DNSc_ResolDNSaIP(dominiPeticio, IPPeticio);
-		printf("Missatge de resposata de LOC %s\n", missatgeOriginal);
 		numBytes = UDP_EnviaA(Sck, IPPeticio, 6000, missatgeOriginal, strlen(missatgeOriginal));
-		printf("Num de bytes de envia a %d\n", numBytes);
 		escriureLiniaFitxLog(log, 'E', IPPeticio, 6000, missatgeOriginal, numBytes);
 	}
 

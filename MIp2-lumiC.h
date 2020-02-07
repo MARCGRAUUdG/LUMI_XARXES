@@ -27,4 +27,5 @@ int LUMIc_DesregistrarUsuari(int Sck, char *adrMI, char *IPDom, int fitxLog);
 int LUMIc_Localitzar(int Sck, char *adrMI, char *IPDom, char *MIloc, char *ipTCP, int *portTCP, int fitxLog);
 int LUMIc_CrearSocketUDP(int port, char *IP);
 int LUMIc_TancarSocketUDP(int Sck);
+int LUMIc_HaArribatAlgunaCosa(int *llistaSck, int midaLlista, int temps);
 int LUMIc_RespostaLocalitzacio(int Sck, char *ipTCP, int portTCP, int codi, int fitxLog);
